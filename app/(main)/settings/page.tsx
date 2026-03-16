@@ -4,8 +4,9 @@ import { useRouter } from 'next/navigation';
 import { useFinance } from '@/lib/context/FinanceContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LogOut, Trash2, Download, AlertCircle, User, Mail, Calendar, Banknote, Building2, Smartphone, CreditCard, Plus, Pencil, Check, X } from 'lucide-react';
+import { LogOut, Trash2, Download, AlertCircle, User, Mail, Calendar, Banknote, Building2, Smartphone, CreditCard, Plus, Pencil, Check, X, Moon, Sun } from 'lucide-react';
 import { useState } from 'react';
+import { useTheme } from 'next-themes';
 import { WalletType } from '@/lib/types';
 import {
   AlertDialog,
@@ -36,6 +37,7 @@ export default function SettingsPage() {
   const [newWalletName, setNewWalletName] = useState('');
   const [newWalletBalance, setNewWalletBalance] = useState('');
 
+  const { resolvedTheme, setTheme } = useTheme();
   const userWallets = wallets.filter((w) => w.userId === user?.id);
 
   const handleLogout = () => { setUser(null); router.push('/login'); };
@@ -48,7 +50,7 @@ export default function SettingsPage() {
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `fintrack-export-${new Date().toISOString().split('T')[0]}.json`;
+    link.download = `finsense-export-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -128,6 +130,28 @@ export default function SettingsPage() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Appearance */}
+      <div className="rounded-2xl border border-border/40 bg-card overflow-hidden">
+        <div className="px-4 py-3 border-b border-border/30"><p className="text-sm font-bold">Appearance</p></div>
+        <div className="p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+              {resolvedTheme === 'dark' ? <Moon className="w-4 h-4 text-primary"/> : <Sun className="w-4 h-4 text-primary"/>}
+            </div>
+            <div>
+              <p className="text-sm font-semibold">{resolvedTheme === 'dark' ? 'Dark Mode' : 'Light Mode'}</p>
+              <p className="text-xs text-muted-foreground">Tap to toggle theme</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+            className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${resolvedTheme === 'dark' ? 'bg-primary' : 'bg-muted-foreground/30'}`}
+          >
+            <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-all duration-300 ${resolvedTheme === 'dark' ? 'left-6' : 'left-0.5'}`}/>
+          </button>
         </div>
       </div>
 

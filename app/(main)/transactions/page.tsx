@@ -5,7 +5,7 @@ import { useFinance } from '@/lib/context/FinanceContext';
 import { TransactionForm } from '@/components/TransactionForm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Trash2, Edit2, Search, SlidersHorizontal, Receipt } from 'lucide-react';
+import { Plus, Trash2, Edit2, Search, SlidersHorizontal, Receipt, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,6 +58,9 @@ export default function TransactionsPage() {
 
   const grouped = useMemo(() => groupByDate(filteredTransactions), [filteredTransactions]);
 
+  const totalIncome = filteredTransactions.reduce((sum, t) => sum + (t.type === 'income' ? t.amount : 0), 0);
+  const totalExpense = filteredTransactions.reduce((sum, t) => sum + (t.type === 'expense' ? t.amount : 0), 0);
+
   const handleEdit = (id: string) => { setEditingId(id); setIsFormOpen(true); };
   const handleDelete = (id: string) => { deleteTransaction(id); setDeleteId(undefined); };
   const getCategoryName = (id: string) => categories.find((c) => c.id === id)?.name || id;
@@ -84,6 +87,18 @@ export default function TransactionsPage() {
           <Plus className="w-4 h-4" />
           Add
         </Button>
+      </div>
+
+      {/* Income / Expense summary strip */}
+      <div className="flex gap-2">
+        <div className="flex-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 flex items-center gap-2">
+          <ArrowUpRight className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0"/>
+          <div><p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold uppercase tracking-wider">Income</p><p className="text-sm font-extrabold text-emerald-700 dark:text-emerald-400 tabular-nums">₱{totalIncome.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>
+        </div>
+        <div className="flex-1 rounded-xl bg-rose-500/10 border border-rose-500/20 px-3 py-2 flex items-center gap-2">
+          <ArrowDownRight className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0"/>
+          <div><p className="text-[10px] text-rose-700 dark:text-rose-400 font-semibold uppercase tracking-wider">Expenses</p><p className="text-sm font-extrabold text-rose-700 dark:text-rose-400 tabular-nums">₱{totalExpense.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p></div>
+        </div>
       </div>
 
       {/* Search + Filter toggle */}
@@ -196,6 +211,7 @@ export default function TransactionsPage() {
                         <p className="text-xs text-muted-foreground mt-0.5 truncate">
                           {getCategoryName(transaction.category)}
                         </p>
+                        <p className="text-[10px] text-muted-foreground/60">{format(new Date(transaction.date), 'h:mm a')}</p>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <span className={`font-bold text-sm tabular-nums ${transaction.type === 'income' ? 'text-accent' : 'text-destructive'}`}>

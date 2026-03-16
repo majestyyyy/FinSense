@@ -73,6 +73,11 @@ export default function DashboardPage() {
             <p className={`text-4xl md:text-5xl font-extrabold tracking-tight text-white ${balance < 0 ? 'text-red-300' : ''}`}>
               {balance < 0 ? '-' : ''}₱{Math.abs(balance).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
+            <div className="mt-2">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-white/15 text-white/70 text-xs font-medium">
+                Net Worth: ₱{(totalSavings + totalWalletBalance - totalBNPLDebt).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
           </div>
 
           {/* Mini stats row */}
@@ -98,8 +103,11 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Wallet className="w-4 h-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold text-muted-foreground">My Wallets</h2>
+              <div className="w-1 h-4 rounded-full bg-primary"></div>
+              <h2 className="text-sm font-bold text-foreground">My Wallets</h2>
+              <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full tabular-nums">
+                ₱{totalWalletBalance.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
             </div>
             <Link href="/settings" className="text-xs text-primary hover:underline font-semibold">Manage →</Link>
           </div>
@@ -280,7 +288,7 @@ export default function DashboardPage() {
 
       {/* Quick Actions */}
       <div>
-        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">Quick Actions</h2>
+        <div className="flex items-center gap-2 mb-3"><div className="w-1 h-4 rounded-full bg-primary"></div><h2 className="text-sm font-bold text-foreground">Quick Actions</h2></div>
         <div className="grid grid-cols-2 gap-3">
           {[
             { href: '/transactions', icon: CreditCard, label: 'Add Transaction', gradient: 'from-cyan-500 to-blue-600' },

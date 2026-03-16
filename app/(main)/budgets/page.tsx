@@ -38,8 +38,7 @@ export default function BudgetsPage() {
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight">Budgets</h1>
         <p className="text-muted-foreground text-sm mt-0.5">
-          {setBudgetsCount} set · {onTrackCount} on track
-          {overBudgetCount > 0 && <span className="text-destructive font-semibold"> · {overBudgetCount} over limit</span>}
+          {new Date().toLocaleDateString('en-PH', { month: 'long', year: 'numeric' })} · {setBudgetsCount} set · {onTrackCount} on track{overBudgetCount > 0 && <span className="text-destructive font-semibold"> · {overBudgetCount} over limit</span>}
         </p>
       </div>
 
@@ -56,6 +55,25 @@ export default function BudgetsPage() {
           </div>
         )}
       </div>
+
+      {/* Overall Budget Health */}
+      {(() => {
+        const totalBudgeted = Object.values(budgetStatus).reduce((s, v) => s + v.limit, 0);
+        const totalSpent = Object.values(budgetStatus).reduce((s, v) => s + v.spent, 0);
+        const overallPct = totalBudgeted > 0 ? (totalSpent / totalBudgeted) * 100 : 0;
+        return Object.keys(budgetStatus).length > 0 && (
+          <div className="rounded-2xl bg-card border border-border/40 p-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-semibold text-muted-foreground">Overall Budget Health</span>
+              <span className="text-xs font-bold tabular-nums">₱{totalSpent.toLocaleString('en-PH', { minimumFractionDigits: 0 })} / ₱{totalBudgeted.toLocaleString('en-PH', { minimumFractionDigits: 0 })}</span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
+              <div className={`h-full rounded-full transition-all duration-700 ${overallPct > 100 ? 'bg-gradient-to-r from-red-500 to-orange-500' : overallPct > 80 ? 'bg-gradient-to-r from-yellow-400 to-amber-500' : 'bg-gradient-to-r from-primary to-emerald-400'}`} style={{ width: `${Math.min(overallPct, 100)}%` }} />
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1.5">{overallPct.toFixed(0)}% of total budget used</p>
+          </div>
+        );
+      })()}
 
       {/* Reallocation Alert */}
       {suggestion && (

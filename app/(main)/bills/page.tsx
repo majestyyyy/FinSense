@@ -149,14 +149,14 @@ export default function BillsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex rounded-xl bg-muted p-1 gap-1">
+      <div className="flex rounded-xl bg-muted/60 p-1 gap-1">
         {(['subscriptions', 'bnpl'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={cn(
               'flex-1 py-2 rounded-lg text-xs font-semibold transition-all',
-              tab === t ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
+              tab === t ? 'bg-card text-foreground shadow-md' : 'text-muted-foreground'
             )}
           >
             {t === 'subscriptions' ? '📦 Subscriptions' : '💳 Pay Later'}
@@ -242,7 +242,7 @@ export default function BillsPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <p className="font-bold text-sm truncate">{sub.name}</p>
-                          {isDueSoon && <span className="text-[9px] font-bold bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full whitespace-nowrap">Due soon</span>}
+                          {isDueSoon && <span className="flex items-center gap-1 text-[9px] font-bold bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full whitespace-nowrap"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"/>Due soon</span>}
                         </div>
                         <p className="text-xs text-muted-foreground capitalize mt-0.5">{sub.category} · {CYCLE_LABELS[sub.billingCycle]}</p>
                         <div className="flex items-center gap-3 mt-2">
@@ -374,6 +374,9 @@ export default function BillsPage() {
                       <div className="mt-2 w-full bg-white/20 rounded-full h-1.5">
                         <div className="bg-white rounded-full h-1.5 transition-all" style={{ width: `${Math.min(usagePercent, 100)}%` }} />
                       </div>
+                    )}
+                    {b.creditLimit > 0 && (
+                      <p className="text-white/60 text-[10px] mt-1">{(100 - usagePercent).toFixed(0)}% available · ₱{(b.creditLimit - b.usedCredit).toLocaleString('en-PH', { minimumFractionDigits: 0 })} remaining</p>
                     )}
                   </div>
                   <div className="p-3 grid grid-cols-3 gap-2 text-center">

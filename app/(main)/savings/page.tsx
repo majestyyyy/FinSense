@@ -203,7 +203,7 @@ export default function SavingsPage() {
           </div>
 
           {form.balance && form.interestRatePA && parseFloat(form.interestRatePA) > 0 && (
-            <div className="rounded-xl bg-primary/10 px-3 py-2.5 text-xs text-primary font-medium space-y-0.5">
+            <div className="rounded-xl bg-primary/10 px-3 py-2.5 text-xs text-primary font-medium space-y-0.5 border-l-2 border-primary">
               <p>📈 Daily interest: +₱{((parseFloat(form.balance) * parseFloat(form.interestRatePA)) / 100 / 365).toFixed(4)}</p>
               <p>📅 Monthly interest: +₱{((parseFloat(form.balance) * parseFloat(form.interestRatePA)) / 100 / 12).toFixed(2)}</p>
               <p>🗓 Yearly interest: +₱{((parseFloat(form.balance) * parseFloat(form.interestRatePA)) / 100).toFixed(2)}</p>
@@ -290,6 +290,9 @@ export default function SavingsPage() {
 
                   {acc.interestRatePA > 0 && (
                     <>
+                      <div className="col-span-2 px-1 pt-1">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Projected Growth</p>
+                      </div>
                       <div className="rounded-xl bg-muted p-3">
                         <div className="flex items-center gap-1 mb-1">
                           <TrendingUp className="w-3 h-3 text-muted-foreground" />
