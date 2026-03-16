@@ -70,8 +70,40 @@ export interface FinancialSummary {
   budgetStatus: Record<string, { spent: number; limit: number; percentage: number }>;
 }
 
-// Alert Types
-export type AlertType = 'budget_warning' | 'budget_exceeded' | 'spending_spike' | 'reallocation_suggested';
+// Subscription Types
+export type BillingCycle = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+
+export interface Subscription {
+  id: string;
+  userId: string;
+  name: string;
+  amount: number;
+  billingCycle: BillingCycle;
+  nextBillingDate: string; // ISO date string
+  category: string; // entertainment, productivity, health, etc.
+  color: string; // tailwind gradient classes
+  isActive: boolean;
+  createdAt: Date;
+}
+
+// Buy Now Pay Later Types
+export type BNPLProvider = 'spaylater' | 'lazpaylater' | 'billease' | 'home_credit' | 'acom' | 'kredivo' | 'other';
+
+export interface BNPLAccount {
+  id: string;
+  userId: string;
+  provider: BNPLProvider;
+  name: string; // custom label e.g. "SPayLater - Main"
+  creditLimit: number;
+  usedCredit: number;
+  dueDate: string; // ISO date string
+  minimumPayment: number;
+  monthlyInstallment: number;
+  isActive: boolean;
+  createdAt: Date;
+}
+
+
 
 export interface Alert {
   id: string;

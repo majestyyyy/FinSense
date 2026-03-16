@@ -8,13 +8,14 @@ import { BottomNav } from '@/components/BottomNav';
 import { AlertBanner } from '@/components/AlertBanner';
 import { InstallPrompt } from '@/components/InstallPrompt';
 import { FloatingChat } from '@/components/FloatingChat';
-import { TrendingUp, Home, CreditCard, Target, Settings, LogOut } from 'lucide-react';
+import { TrendingUp, Home, CreditCard, Target, Settings, LogOut, Receipt } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
   { href: '/transactions', label: 'Transactions', icon: CreditCard },
   { href: '/budgets', label: 'Budgets', icon: Target },
+  { href: '/bills', label: 'Bills & BNPL', icon: Receipt },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 

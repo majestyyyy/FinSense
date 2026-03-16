@@ -11,6 +11,8 @@ import {
   Category,
   FinancialSummary,
   Wallet,
+  Subscription,
+  BNPLAccount,
 } from '@/lib/types';
 
 interface FinanceContextType {
@@ -58,6 +60,20 @@ interface FinanceContextType {
   // Reallocation
   suggestReallocation: () => ReallocationSuggestion | null;
   applyReallocation: (suggestion: ReallocationSuggestion) => void;
+
+  // Subscriptions
+  subscriptions: Subscription[];
+  addSubscription: (sub: Omit<Subscription, 'id' | 'userId' | 'createdAt'>) => void;
+  updateSubscription: (id: string, updates: Partial<Subscription>) => void;
+  deleteSubscription: (id: string) => void;
+  totalMonthlySubscriptions: number;
+
+  // BNPL
+  bnplAccounts: BNPLAccount[];
+  addBNPLAccount: (account: Omit<BNPLAccount, 'id' | 'userId' | 'createdAt'>) => void;
+  updateBNPLAccount: (id: string, updates: Partial<BNPLAccount>) => void;
+  deleteBNPLAccount: (id: string) => void;
+  totalBNPLDebt: number;
 }
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
@@ -80,6 +96,8 @@ const STORAGE_KEY_BUDGETS = 'finance_budgets';
 const STORAGE_KEY_CHAT = 'finance_chat';
 const STORAGE_KEY_ALERTS = 'finance_alerts';
 const STORAGE_KEY_WALLETS = 'finance_wallets';
+const STORAGE_KEY_SUBSCRIPTIONS = 'finance_subscriptions';
+const STORAGE_KEY_BNPL = 'finance_bnpl';
 
 export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -88,6 +106,8 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [bnplAccounts, setBNPLAccounts] = useState<BNPLAccount[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
 
   // Load from localStorage on mount
@@ -153,6 +173,18 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
             }))
           );
         }
+
+        const storedSubs = localStorage.getItem(STORAGE_KEY_SUBSCRIPTIONS);
+        if (storedSubs) {
+          const parsed = JSON.parse(storedSubs);
+          setSubscriptions(parsed.map((s: any) => ({ ...s, createdAt: new Date(s.createdAt) })));
+        }
+
+        const storedBNPL = localStorage.getItem(STORAGE_KEY_BNPL);
+        if (storedBNPL) {
+          const parsed = JSON.parse(storedBNPL);
+          setBNPLAccounts(parsed.map((b: any) => ({ ...b, createdAt: new Date(b.createdAt) })));
+        }
       } catch (error) {
         console.error('Error loading from storage:', error);
       }
@@ -171,7 +203,11 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
         localStorage.removeItem(STORAGE_KEY_USER);
         // Clear wallets when user logs out
         localStorage.removeItem(STORAGE_KEY_WALLETS);
+        localStorage.removeItem(STORAGE_KEY_SUBSCRIPTIONS);
+        localStorage.removeItem(STORAGE_KEY_BNPL);
         setWallets([]);
+        setSubscriptions([]);
+        setBNPLAccounts([]);
       }
     }
   }, [user, isHydrated]);
@@ -210,6 +246,20 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       localStorage.setItem(STORAGE_KEY_ALERTS, JSON.stringify(alerts));
     }
   }, [alerts, isHydrated]);
+
+  // Save subscriptions to localStorage
+  useEffect(() => {
+    if (isHydrated) {
+      localStorage.setItem(STORAGE_KEY_SUBSCRIPTIONS, JSON.stringify(subscriptions));
+    }
+  }, [subscriptions, isHydrated]);
+
+  // Save BNPL accounts to localStorage
+  useEffect(() => {
+    if (isHydrated) {
+      localStorage.setItem(STORAGE_KEY_BNPL, JSON.stringify(bnplAccounts));
+    }
+  }, [bnplAccounts, isHydrated]);
 
   // Wallet operations
   const addWallet = (wallet: Omit<Wallet, 'id' | 'userId' | 'createdAt'>) => {
@@ -458,6 +508,58 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const financialSummary = calculateFinancialSummary();
 
+  // Subscription operations
+  const addSubscription = (sub: Omit<Subscription, 'id' | 'userId' | 'createdAt'>) => {
+    const newSub: Subscription = {
+      ...sub,
+      id: `sub_${Date.now()}`,
+      userId: user?.id ?? '',
+      createdAt: new Date(),
+    };
+    setSubscriptions((prev) => [...prev, newSub]);
+  };
+
+  const updateSubscription = (id: string, updates: Partial<Subscription>) => {
+    setSubscriptions((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+  };
+
+  const deleteSubscription = (id: string) => {
+    setSubscriptions((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  const totalMonthlySubscriptions = subscriptions
+    .filter((s) => s.isActive && s.userId === user?.id)
+    .reduce((sum, s) => {
+      if (s.billingCycle === 'monthly') return sum + s.amount;
+      if (s.billingCycle === 'yearly') return sum + s.amount / 12;
+      if (s.billingCycle === 'quarterly') return sum + s.amount / 3;
+      if (s.billingCycle === 'weekly') return sum + s.amount * 4.33;
+      return sum;
+    }, 0);
+
+  // BNPL operations
+  const addBNPLAccount = (account: Omit<BNPLAccount, 'id' | 'userId' | 'createdAt'>) => {
+    const newAccount: BNPLAccount = {
+      ...account,
+      id: `bnpl_${Date.now()}`,
+      userId: user?.id ?? '',
+      createdAt: new Date(),
+    };
+    setBNPLAccounts((prev) => [...prev, newAccount]);
+  };
+
+  const updateBNPLAccount = (id: string, updates: Partial<BNPLAccount>) => {
+    setBNPLAccounts((prev) => prev.map((b) => (b.id === id ? { ...b, ...updates } : b)));
+  };
+
+  const deleteBNPLAccount = (id: string) => {
+    setBNPLAccounts((prev) => prev.filter((b) => b.id !== id));
+  };
+
+  const totalBNPLDebt = bnplAccounts
+    .filter((b) => b.isActive && b.userId === user?.id)
+    .reduce((sum, b) => sum + b.usedCredit, 0);
+
   const value: FinanceContextType = {
     user,
     setUser,
@@ -486,6 +588,16 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     financialSummary,
     suggestReallocation,
     applyReallocation,
+    subscriptions,
+    addSubscription,
+    updateSubscription,
+    deleteSubscription,
+    totalMonthlySubscriptions,
+    bnplAccounts,
+    addBNPLAccount,
+    updateBNPLAccount,
+    deleteBNPLAccount,
+    totalBNPLDebt,
   };
 
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;
