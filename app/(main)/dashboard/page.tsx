@@ -4,7 +4,7 @@ import { useFinance } from '@/lib/context/FinanceContext';
 import { CategoryBreakdownChart, SpendingTrendsChart, IncomeVsExpensesChart } from '@/components/DashboardCharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowDownRight, ArrowUpRight, AlertTriangle, TrendingUp, CreditCard, Target, Banknote, Building2, Smartphone, Wallet, Receipt } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, AlertTriangle, TrendingUp, CreditCard, Target, Banknote, Building2, Smartphone, Wallet, Receipt, PiggyBank } from 'lucide-react';
 import Link from 'next/link';
 import { WalletType } from '@/lib/types';
 
@@ -23,7 +23,7 @@ const walletGradients: Record<WalletType, string> = {
 };
 
 export default function DashboardPage() {
-  const { financialSummary, user, wallets, totalWalletBalance, totalMonthlySubscriptions, totalBNPLDebt } = useFinance();
+  const { financialSummary, user, wallets, totalWalletBalance, totalMonthlySubscriptions, totalBNPLDebt, totalSavings } = useFinance();
 
   const {
     totalIncome,
@@ -186,10 +186,21 @@ export default function DashboardPage() {
       </div>
 
       {/* Bills & BNPL Summary */}
-      {(totalMonthlySubscriptions > 0 || totalBNPLDebt > 0) && (
-        <Link href="/bills">
-          <div className="grid grid-cols-2 gap-3 cursor-pointer">
-            {totalMonthlySubscriptions > 0 && (
+      {(totalMonthlySubscriptions > 0 || totalBNPLDebt > 0 || totalSavings > 0) && (
+        <div className="grid grid-cols-2 gap-3">
+          {totalSavings > 0 && (
+            <Link href="/savings">
+              <div className="rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-4 text-white card-lift">
+                <div className="flex items-center gap-2 mb-2">
+                  <PiggyBank className="w-4 h-4 text-white/80" />
+                  <p className="text-white/80 text-[10px] font-semibold uppercase tracking-wider">Savings</p>
+                </div>
+                <p className="text-xl font-extrabold tabular-nums">₱{totalSavings.toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+              </div>
+            </Link>
+          )}
+          {totalMonthlySubscriptions > 0 && (
+            <Link href="/bills">
               <div className="rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 p-4 text-white card-lift">
                 <div className="flex items-center gap-2 mb-2">
                   <Receipt className="w-4 h-4 text-white/80" />
@@ -197,8 +208,10 @@ export default function DashboardPage() {
                 </div>
                 <p className="text-xl font-extrabold tabular-nums">₱{totalMonthlySubscriptions.toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
               </div>
-            )}
-            {totalBNPLDebt > 0 && (
+            </Link>
+          )}
+          {totalBNPLDebt > 0 && (
+            <Link href="/bills">
               <div className="rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 p-4 text-white card-lift">
                 <div className="flex items-center gap-2 mb-2">
                   <CreditCard className="w-4 h-4 text-white/80" />
@@ -206,9 +219,9 @@ export default function DashboardPage() {
                 </div>
                 <p className="text-xl font-extrabold tabular-nums">₱{totalBNPLDebt.toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
               </div>
-            )}
-          </div>
-        </Link>
+            </Link>
+          )}
+        </div>
       )}
 
       {/* Budget Progress */}

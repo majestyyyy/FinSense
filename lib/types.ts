@@ -70,8 +70,21 @@ export interface FinancialSummary {
   budgetStatus: Record<string, { spent: number; limit: number; percentage: number }>;
 }
 
-// Subscription Types
-export type BillingCycle = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+// Savings Account Types
+export interface SavingsAccount {
+  id: string;
+  userId: string;
+  name: string;          // e.g. "Emergency Fund"
+  bankName: string;      // e.g. "BDO", "BPI", "GCash GSave"
+  balance: number;       // current balance including accrued interest
+  principal: number;     // original deposited amount (for display)
+  interestRatePA: number; // annual interest rate in % e.g. 4.5
+  lastInterestDate: string; // ISO date — last date daily interest was applied
+  color: string;         // tailwind gradient
+  notes: string;
+  createdAt: Date;
+}
+
 
 export interface Subscription {
   id: string;

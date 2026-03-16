@@ -13,6 +13,7 @@ import {
   Wallet,
   Subscription,
   BNPLAccount,
+  SavingsAccount,
 } from '@/lib/types';
 
 interface FinanceContextType {
@@ -74,6 +75,13 @@ interface FinanceContextType {
   updateBNPLAccount: (id: string, updates: Partial<BNPLAccount>) => void;
   deleteBNPLAccount: (id: string) => void;
   totalBNPLDebt: number;
+
+  // Savings
+  savingsAccounts: SavingsAccount[];
+  addSavingsAccount: (account: Omit<SavingsAccount, 'id' | 'userId' | 'createdAt'>) => void;
+  updateSavingsAccount: (id: string, updates: Partial<SavingsAccount>) => void;
+  deleteSavingsAccount: (id: string) => void;
+  totalSavings: number;
 }
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
@@ -98,6 +106,7 @@ const STORAGE_KEY_ALERTS = 'finance_alerts';
 const STORAGE_KEY_WALLETS = 'finance_wallets';
 const STORAGE_KEY_SUBSCRIPTIONS = 'finance_subscriptions';
 const STORAGE_KEY_BNPL = 'finance_bnpl';
+const STORAGE_KEY_SAVINGS = 'finance_savings';
 
 export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -108,6 +117,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [bnplAccounts, setBNPLAccounts] = useState<BNPLAccount[]>([]);
+  const [savingsAccounts, setSavingsAccounts] = useState<SavingsAccount[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
 
   // Load from localStorage on mount
@@ -185,6 +195,12 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
           const parsed = JSON.parse(storedBNPL);
           setBNPLAccounts(parsed.map((b: any) => ({ ...b, createdAt: new Date(b.createdAt) })));
         }
+
+        const storedSavings = localStorage.getItem(STORAGE_KEY_SAVINGS);
+        if (storedSavings) {
+          const parsed = JSON.parse(storedSavings);
+          setSavingsAccounts(parsed.map((s: any) => ({ ...s, createdAt: new Date(s.createdAt) })));
+        }
       } catch (error) {
         console.error('Error loading from storage:', error);
       }
@@ -205,9 +221,11 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
         localStorage.removeItem(STORAGE_KEY_WALLETS);
         localStorage.removeItem(STORAGE_KEY_SUBSCRIPTIONS);
         localStorage.removeItem(STORAGE_KEY_BNPL);
+        localStorage.removeItem(STORAGE_KEY_SAVINGS);
         setWallets([]);
         setSubscriptions([]);
         setBNPLAccounts([]);
+        setSavingsAccounts([]);
       }
     }
   }, [user, isHydrated]);
@@ -260,6 +278,13 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       localStorage.setItem(STORAGE_KEY_BNPL, JSON.stringify(bnplAccounts));
     }
   }, [bnplAccounts, isHydrated]);
+
+  // Save savings accounts to localStorage
+  useEffect(() => {
+    if (isHydrated) {
+      localStorage.setItem(STORAGE_KEY_SAVINGS, JSON.stringify(savingsAccounts));
+    }
+  }, [savingsAccounts, isHydrated]);
 
   // Wallet operations
   const addWallet = (wallet: Omit<Wallet, 'id' | 'userId' | 'createdAt'>) => {
@@ -560,6 +585,50 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     .filter((b) => b.isActive && b.userId === user?.id)
     .reduce((sum, b) => sum + b.usedCredit, 0);
 
+  // ── Daily interest accrual ────────────────────────────────────────────────
+  // Runs once on hydration: applies outstanding daily compounding interest
+  useEffect(() => {
+    if (!isHydrated || savingsAccounts.length === 0) return;
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    setSavingsAccounts((prev) =>
+      prev.map((acc) => {
+        if (acc.interestRatePA <= 0) return acc;
+        const last = new Date(acc.lastInterestDate);
+        const now = new Date(today);
+        const daysDiff = Math.floor((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysDiff <= 0) return acc;
+        // Daily compounding: B * (1 + r/365)^days
+        const dailyRate = acc.interestRatePA / 100 / 365;
+        const newBalance = acc.balance * Math.pow(1 + dailyRate, daysDiff);
+        return { ...acc, balance: Math.round(newBalance * 100) / 100, lastInterestDate: today };
+      })
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHydrated]);
+
+  // Savings CRUD
+  const addSavingsAccount = (account: Omit<SavingsAccount, 'id' | 'userId' | 'createdAt'>) => {
+    const newAcc: SavingsAccount = {
+      ...account,
+      id: `sav_${Date.now()}`,
+      userId: user?.id ?? '',
+      createdAt: new Date(),
+    };
+    setSavingsAccounts((prev) => [...prev, newAcc]);
+  };
+
+  const updateSavingsAccount = (id: string, updates: Partial<SavingsAccount>) => {
+    setSavingsAccounts((prev) => prev.map((a) => (a.id === id ? { ...a, ...updates } : a)));
+  };
+
+  const deleteSavingsAccount = (id: string) => {
+    setSavingsAccounts((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const totalSavings = savingsAccounts
+    .filter((a) => a.userId === user?.id)
+    .reduce((sum, a) => sum + a.balance, 0);
+
   const value: FinanceContextType = {
     user,
     setUser,
@@ -598,6 +667,11 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     updateBNPLAccount,
     deleteBNPLAccount,
     totalBNPLDebt,
+    savingsAccounts,
+    addSavingsAccount,
+    updateSavingsAccount,
+    deleteSavingsAccount,
+    totalSavings,
   };
 
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;
