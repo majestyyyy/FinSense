@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { FinancialSummary } from '@/lib/types';
 
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY ?? '');
-
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 interface ChatRequest {
   message: string;
   financialData?: FinancialSummary;

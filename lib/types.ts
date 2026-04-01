@@ -86,6 +86,8 @@ export interface SavingsAccount {
 }
 
 
+export type BillingCycle = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+
 export interface Subscription {
   id: string;
   userId: string;
@@ -117,6 +119,8 @@ export interface BNPLAccount {
 }
 
 
+// Alert Types
+export type AlertType = 'budget_exceeded' | 'upcoming_payment' | 'savings_milestone' | 'subscription_due' | 'bnpl_due' | 'low_balance' | 'general';
 
 export interface Alert {
   id: string;
