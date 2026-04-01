@@ -134,11 +134,17 @@
   * {
     @apply border-border outline-ring/50;
   }
-  html, body {
+
+  html,
+  body,
+  #__next {
+    height: 100%;
     overflow-x: hidden;
+    overflow-y: auto;
     max-width: 100vw;
     scroll-behavior: smooth;
   }
+
   body {
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
@@ -147,6 +153,7 @@
 }
 
 @layer utilities {
+
   /* Gradient text */
   .text-gradient {
     background: linear-gradient(135deg, oklch(0.50 0.20 150), oklch(0.62 0.18 165));
@@ -154,6 +161,7 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
   .dark .text-gradient {
     background: linear-gradient(135deg, oklch(0.75 0.22 150), oklch(0.68 0.18 165));
     -webkit-background-clip: text;
@@ -168,6 +176,7 @@
     background: oklch(1 0 0 / 0.72);
     border: 1px solid oklch(0.88 0.018 150 / 0.55);
   }
+
   .dark .glass-card {
     background: oklch(0.11 0.014 150 / 0.82);
     border: 1px solid oklch(0.20 0.020 150 / 0.5);
@@ -185,6 +194,7 @@
   .glow-primary {
     box-shadow: 0 0 24px oklch(0.50 0.20 150 / 0.35);
   }
+
   .dark .glow-primary {
     box-shadow: 0 0 24px oklch(0.68 0.22 150 / 0.45);
   }
@@ -193,10 +203,12 @@
   .card-lift {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
+
   .card-lift:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 24px oklch(0 0 0 / 0.10);
   }
+
   .dark .card-lift:hover {
     box-shadow: 0 8px 24px oklch(0 0 0 / 0.40);
   }
@@ -205,20 +217,45 @@
   .typing-dot {
     animation: typing-bounce 1.4s infinite ease-in-out;
   }
-  .typing-dot:nth-child(1) { animation-delay: 0s; }
-  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  .typing-dot:nth-child(1) {
+    animation-delay: 0s;
+  }
+
+  .typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+  }
 
   @keyframes typing-bounce {
-    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-    30% { transform: translateY(-6px); opacity: 1; }
+
+    0%,
+    60%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.4;
+    }
+
+    30% {
+      transform: translateY(-6px);
+      opacity: 1;
+    }
   }
 
   /* Shimmer */
   @keyframes shimmer {
-    from { background-position: -200% 0; }
-    to   { background-position:  200% 0; }
+    from {
+      background-position: -200% 0;
+    }
+
+    to {
+      background-position: 200% 0;
+    }
   }
+
   .shimmer {
     background: linear-gradient(90deg, transparent 25%, oklch(0 0 100% / 0.08) 50%, transparent 75%);
     background-size: 200% 100%;
@@ -227,9 +264,17 @@
 
   /* Fade-up entrance */
   @keyframes fade-up {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
+
   .animate-fade-up {
     animation: fade-up 0.4s ease forwards;
   }
@@ -238,9 +283,11 @@
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+
   .pt-safe {
     padding-top: env(safe-area-inset-top, 0px);
   }
+
   .mb-safe {
     margin-bottom: env(safe-area-inset-bottom, 0px);
   }

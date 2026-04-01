@@ -119,7 +119,7 @@ export default function MainLayout({
       {/* Main content area */}
       <div className="flex-1 flex flex-col md:ml-60 min-h-screen">
         <AlertBanner />
-        <main className="flex-1 overflow-auto pb-28 md:pb-8" style={{ paddingBottom: 'max(7rem, calc(5rem + env(safe-area-inset-bottom)))' }}>
+        <main className="flex-1 h-full pb-28 md:pb-8" style={{ paddingBottom: 'max(7rem, calc(5rem + env(safe-area-inset-bottom)))' }}>
           {children}
         </main>
         <BottomNav />
