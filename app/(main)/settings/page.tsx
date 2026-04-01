@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useFinance } from '@/lib/context/FinanceContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LogOut, Trash2, Download, AlertCircle, User, Mail, Calendar, Banknote, Building2, Smartphone, CreditCard, Plus, Pencil, Check, X, Moon, Sun } from 'lucide-react';
+import { LogOut, Trash2, Download, AlertCircle, User, Mail, Calendar, Banknote, Building2, Smartphone, CreditCard, Plus, Pencil, Check, X, Moon, Sun, Settings as SettingsIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from 'next-themes';
 import { WalletType } from '@/lib/types';
@@ -83,38 +83,57 @@ export default function SettingsPage() {
   const initials = user?.name ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) : '??';
 
   return (
-    <div className="space-y-5 p-4 md:p-8 max-w-2xl mx-auto animate-fade-up">
-      <div>
-        <h1 className="text-2xl font-extrabold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">Manage your account and wallets</p>
+    <div className="space-y-5 p-4 md:p-6 lg:p-8 animate-fade-up">
+      {/* Header with gradient background and icon */}
+      <div className="max-w-4xl mx-auto">
+        <div className="relative mb-4 overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-slate-900 p-8 md:p-12 shadow-lg">
+          {/* Animated background elements */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-emerald-400/10 blur-3xl" />
+            <div className="absolute -bottom-20 -left-40 w-80 h-80 rounded-full bg-primary/10 blur-3xl" />
+          </div>
+
+          {/* Content */}
+          <div className="relative flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20">
+                  <SettingsIcon className="w-6 h-6 text-white" />
+                </div>
+                <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">Settings</h1>
+              </div>
+              <p className="text-emerald-100/80 text-base md:text-lg font-medium">Manage your account and wallets</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Profile Hero */}
-      <div className="rounded-2xl overflow-hidden">
+      <div className="rounded-2xl overflow-hidden max-w-4xl mx-auto w-full">
         <div className="h-24 bg-gradient-to-br from-emerald-600 via-emerald-800 to-black relative">
           <div className="absolute inset-0">
             <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/5 translate-x-1/3 -translate-y-1/3 blur-2xl" />
           </div>
         </div>
-        <div className="bg-card border border-border/40 border-t-0 rounded-b-2xl px-5 pb-5 -mt-1">
-          <div className="flex items-end gap-4 -mt-8">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-800 flex items-center justify-center text-xl font-bold text-white shadow-xl border-4 border-card shrink-0">
+        <div className="px-5 sm:px-6 py-5 sm:py-6">
+          <div className="flex items-end gap-4 sm:gap-5">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-800 flex items-center justify-center text-2xl font-bold text-white shadow-xl border-4 border-card shrink-0">
               {initials}
             </div>
-            <div className="pb-1">
-              <h2 className="font-extrabold text-lg leading-tight">{user?.name}</h2>
-              <p className="text-sm text-muted-foreground">{user?.email}</p>
+            <div className="pb-1 min-w-0 flex-1">
+              <h2 className="font-extrabold text-xl sm:text-2xl leading-tight break-words">{user?.name}</h2>
+              <p className="text-sm sm:text-base text-muted-foreground break-words mt-1">{user?.email}</p>
             </div>
           </div>
-          <div className="mt-4 grid grid-cols-3 gap-3">
+          <div className="mt-6 grid grid-cols-3 gap-4">
             {[
               { value: transactions.length, label: 'Transactions', color: 'text-primary' },
               { value: budgets.length, label: 'Budgets', color: 'text-accent' },
               { value: chatMessages.length, label: 'Messages', color: 'text-emerald-500' },
             ].map(({ value, label, color }) => (
-              <div key={label} className="text-center py-3 rounded-xl bg-muted/50">
-                <p className={`text-2xl font-extrabold ${color}`}>{value}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5 uppercase tracking-wide">{label}</p>
+              <div key={label} className="text-center py-5 px-3 rounded-xl bg-muted/50">
+                <p className={`text-3xl font-extrabold ${color}`}>{value}</p>
+                <p className="text-[10px] text-muted-foreground mt-1.5 uppercase tracking-wide">{label}</p>
               </div>
             ))}
           </div>
@@ -122,7 +141,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Account Info */}
-      <div className="rounded-2xl border border-border/40 bg-card overflow-hidden">
+      <div className="rounded-2xl border border-border/40 bg-card overflow-hidden max-w-4xl mx-auto w-full">
         <div className="px-4 py-3 border-b border-border/30">
           <p className="text-sm font-bold">Account Information</p>
         </div>
@@ -132,13 +151,13 @@ export default function SettingsPage() {
             { icon: Mail, label: 'Email', value: user?.email },
             { icon: Calendar, label: 'Member Since', value: user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A' },
           ].map(({ icon: Icon, label, value }) => (
-            <div key={label} className="flex items-center gap-3 px-4 py-3.5">
-              <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <Icon className="w-3.5 h-3.5 text-primary" />
+            <div key={label} className="flex items-center gap-4 px-5 sm:px-6 py-4 sm:py-5">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <Icon className="w-4 h-4 text-primary" />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
-                <p className="text-sm font-semibold truncate">{value}</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">{label}</p>
+                <p className="text-base font-semibold truncate mt-1">{value}</p>
               </div>
             </div>
           ))}
@@ -146,7 +165,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Appearance */}
-      <div className="rounded-2xl border border-border/40 bg-card overflow-hidden">
+      <div className="rounded-2xl border border-border/40 bg-card overflow-hidden max-w-4xl mx-auto w-full">
         <div className="px-4 py-3 border-b border-border/30"><p className="text-sm font-bold">Appearance</p></div>
         <div className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -168,7 +187,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Wallets */}
-      <div className="rounded-2xl border border-border/40 bg-card overflow-hidden">
+      <div className="rounded-2xl border border-border/40 bg-card overflow-hidden max-w-4xl mx-auto w-full">
         <div className="px-4 py-3 border-b border-border/30 flex items-center justify-between">
           <div>
             <p className="text-sm font-bold">My Wallets</p>
@@ -242,7 +261,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Data Management */}
-      <div className="rounded-2xl border border-border/40 bg-card overflow-hidden">
+      <div className="rounded-2xl border border-border/40 bg-card overflow-hidden max-w-4xl mx-auto w-full">
         <div className="px-4 py-3 border-b border-border/30">
           <p className="text-sm font-bold">Data Management</p>
         </div>
@@ -256,7 +275,7 @@ export default function SettingsPage() {
       </div>
 
       {/* About */}
-      <div className="rounded-2xl border border-border/30 bg-muted/30 p-4 space-y-2">
+      <div className="rounded-2xl border border-border/30 bg-muted/30 p-4 space-y-2 max-w-4xl mx-auto w-full">
         <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">About FinSense</p>
         <p className="text-sm text-muted-foreground leading-relaxed">A personal finance tracker for Filipino students — track expenses, set budgets, and get AI advice.</p>
         <div className="flex items-center gap-4 pt-1 text-xs text-muted-foreground">
@@ -266,7 +285,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Danger Zone */}
-      <div className="rounded-2xl border border-destructive/30 bg-destructive/5 overflow-hidden">
+      <div className="rounded-2xl border border-destructive/30 bg-destructive/5 overflow-hidden max-w-4xl mx-auto w-full">
         <div className="px-4 py-3 border-b border-destructive/20">
           <p className="text-sm font-bold text-destructive flex items-center gap-2"><AlertCircle className="w-4 h-4" />Danger Zone</p>
         </div>

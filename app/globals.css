@@ -291,4 +291,62 @@
   .mb-safe {
     margin-bottom: env(safe-area-inset-bottom, 0px);
   }
+
+  /* Responsive text sizing utilities */
+  .text-responsive-xs {
+    @apply text-[11px] sm:text-xs;
+  }
+
+  .text-responsive-sm {
+    @apply text-xs sm:text-sm;
+  }
+
+  .text-responsive-base {
+    @apply text-sm sm:text-base;
+  }
+
+  .text-responsive-lg {
+    @apply text-base sm:text-lg;
+  }
+
+  .text-responsive-xl {
+    @apply text-lg sm:text-xl;
+  }
+
+  /* Responsive padding utilities */
+  .px-responsive {
+    @apply px-2 sm:px-3 md:px-4;
+  }
+
+  .py-responsive {
+    @apply py-2 sm:py-3 md:py-4;
+  }
+
+  .p-responsive {
+    @apply p-2 sm:p-3 md:p-4;
+  }
+
+  .gap-responsive {
+    @apply gap-1.5 sm:gap-2 md:gap-2.5;
+  }
+
+  /* Responsive container sizes */
+  .chat-bubble-mobile {
+    @apply max-w-[85%] sm:max-w-[75%] md:max-w-[70%];
+  }
+
+  /* Touch-friendly sizing for mobile */
+  @media (hover: none) and (pointer: coarse) {
+    .touch-target {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+
+  /* Landscape mobile adjustments */
+  @media (max-height: 600px) {
+    .max-h-chat-mobile {
+      max-height: 80vh;
+    }
+  }
 }
