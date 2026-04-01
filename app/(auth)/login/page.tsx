@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useFinance } from '@/lib/context/FinanceContext';
 import { User } from '@/lib/types';
-import { TrendingUp, Shield, Sparkles, BarChart3, User as UserIcon, Mail, Loader2, ArrowRight } from 'lucide-react';
+import { TrendingUp, Shield, Sparkles, BarChart3, Mail, Loader2, ArrowRight } from 'lucide-react';
 
 const features = [
   { icon: TrendingUp, label: 'Real-time spending tracker', desc: 'See where every peso goes' },
@@ -20,7 +20,6 @@ export default function LoginPage() {
   const router = useRouter();
   const { setUser } = useFinance();
   const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -34,9 +33,9 @@ export default function LoginPage() {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) { setError('Please enter a valid email address'); return; }
 
-      const { data, error } = await import('@/lib/supabase').then((m) =>
-        m.supabase.auth.signInWithPassword({ email, password })
-      );
+      const { supabase } = await import('@/lib/supabase');
+      if (!supabase) throw new Error('Supabase client not configured');
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error || !data.user) {
         setError(error?.message ?? 'Login failed.');
@@ -46,7 +45,7 @@ export default function LoginPage() {
       setUser({
         id: data.user.id,
         email: data.user.email ?? '',
-        name: name || '',
+        name: data.user.user_metadata?.name ?? '',
         createdAt: new Date(),
       });
       router.push('/onboarding');
@@ -118,21 +117,6 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
-            <div className="space-y-1.5">
-              <label htmlFor="name" className="text-sm font-semibold">Full Name</label>
-              <div className="relative">
-                <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="Juan dela Cruz"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  disabled={isLoading}
-                  className="pl-10 h-11 bg-muted/40 border-border/60 focus:bg-background"
-                />
-              </div>
-            </div>
             <div className="space-y-1.5">
               <label htmlFor="email" className="text-sm font-semibold">Email Address</label>
               <div className="relative">

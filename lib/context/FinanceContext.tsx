@@ -992,7 +992,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
         return { ...acc, balance: Math.round(newBalance * 100) / 100, lastInterestDate: today };
       })
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHydrated]);
 
   // Savings CRUD
