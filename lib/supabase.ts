@@ -246,9 +246,21 @@ export const supabaseHelpers = {
   },
 
   async addSavingsAccount(userId: string, account: any) {
+    const payload = {
+      user_id: userId,
+      name: account.name,
+      bank_name: account.bankName,
+      balance: account.balance,
+      principal: account.principal,
+      interest_rate_pa: account.interestRatePA,
+      last_interest_date: account.lastInterestDate,
+      color: account.color,
+      notes: account.notes,
+    };
+
     const { data, error } = await getSupabase()
       .from('savings_accounts')
-      .insert([{ ...account, user_id: userId }])
+      .insert([payload])
       .select()
       .single();
     if (error) throw error;
@@ -256,9 +268,20 @@ export const supabaseHelpers = {
   },
 
   async updateSavingsAccount(id: string, updates: any) {
+    const mapped = {
+      ...(updates.name !== undefined ? { name: updates.name } : {}),
+      ...(updates.bankName !== undefined ? { bank_name: updates.bankName } : {}),
+      ...(updates.balance !== undefined ? { balance: updates.balance } : {}),
+      ...(updates.principal !== undefined ? { principal: updates.principal } : {}),
+      ...(updates.interestRatePA !== undefined ? { interest_rate_pa: updates.interestRatePA } : {}),
+      ...(updates.lastInterestDate !== undefined ? { last_interest_date: updates.lastInterestDate } : {}),
+      ...(updates.color !== undefined ? { color: updates.color } : {}),
+      ...(updates.notes !== undefined ? { notes: updates.notes } : {}),
+    };
+
     const { data, error } = await getSupabase()
       .from('savings_accounts')
-      .update(updates)
+      .update(mapped)
       .eq('id', id)
       .select()
       .single();
@@ -286,9 +309,20 @@ export const supabaseHelpers = {
   },
 
   async addSubscription(userId: string, subscription: any) {
+    const payload = {
+      user_id: userId,
+      name: subscription.name,
+      amount: subscription.amount,
+      billing_cycle: subscription.billingCycle,
+      next_billing_date: subscription.nextBillingDate,
+      category: subscription.category,
+      color: subscription.color,
+      is_active: subscription.isActive,
+    };
+
     const { data, error } = await getSupabase()
       .from('subscriptions')
-      .insert([{ ...subscription, user_id: userId }])
+      .insert([payload])
       .select()
       .single();
     if (error) throw error;
@@ -296,9 +330,19 @@ export const supabaseHelpers = {
   },
 
   async updateSubscription(id: string, updates: any) {
+    const mapped = {
+      ...(updates.name !== undefined ? { name: updates.name } : {}),
+      ...(updates.amount !== undefined ? { amount: updates.amount } : {}),
+      ...(updates.billingCycle !== undefined ? { billing_cycle: updates.billingCycle } : {}),
+      ...(updates.nextBillingDate !== undefined ? { next_billing_date: updates.nextBillingDate } : {}),
+      ...(updates.category !== undefined ? { category: updates.category } : {}),
+      ...(updates.color !== undefined ? { color: updates.color } : {}),
+      ...(updates.isActive !== undefined ? { is_active: updates.isActive } : {}),
+    };
+
     const { data, error } = await getSupabase()
       .from('subscriptions')
-      .update(updates)
+      .update(mapped)
       .eq('id', id)
       .select()
       .single();
@@ -326,9 +370,21 @@ export const supabaseHelpers = {
   },
 
   async addBNPLAccount(userId: string, account: any) {
+    const payload = {
+      user_id: userId,
+      provider: account.provider,
+      name: account.name,
+      credit_limit: account.creditLimit,
+      used_credit: account.usedCredit,
+      due_date: account.dueDate,
+      minimum_payment: account.minimumPayment,
+      monthly_installment: account.monthlyInstallment,
+      is_active: account.isActive,
+    };
+
     const { data, error } = await getSupabase()
       .from('bnpl_accounts')
-      .insert([{ ...account, user_id: userId }])
+      .insert([payload])
       .select()
       .single();
     if (error) throw error;
@@ -336,9 +392,20 @@ export const supabaseHelpers = {
   },
 
   async updateBNPLAccount(id: string, updates: any) {
+    const mapped = {
+      ...(updates.provider !== undefined ? { provider: updates.provider } : {}),
+      ...(updates.name !== undefined ? { name: updates.name } : {}),
+      ...(updates.creditLimit !== undefined ? { credit_limit: updates.creditLimit } : {}),
+      ...(updates.usedCredit !== undefined ? { used_credit: updates.usedCredit } : {}),
+      ...(updates.dueDate !== undefined ? { due_date: updates.dueDate } : {}),
+      ...(updates.minimumPayment !== undefined ? { minimum_payment: updates.minimumPayment } : {}),
+      ...(updates.monthlyInstallment !== undefined ? { monthly_installment: updates.monthlyInstallment } : {}),
+      ...(updates.isActive !== undefined ? { is_active: updates.isActive } : {}),
+    };
+
     const { data, error } = await getSupabase()
       .from('bnpl_accounts')
-      .update(updates)
+      .update(mapped)
       .eq('id', id)
       .select()
       .single();

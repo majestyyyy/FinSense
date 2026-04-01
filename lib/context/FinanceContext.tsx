@@ -863,7 +863,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       updateBudget(toBudget.id, toBudget.monthlyLimit + suggestion.amount);
 
       addAlert({
-        type: 'info',
+        type: 'general',
         title: 'Budget Reallocated',
         message: `₱${suggestion.amount.toFixed(2)} moved from ${suggestion.fromCategory} to ${suggestion.toCategory}`,
         severity: 'info',
