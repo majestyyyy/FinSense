@@ -1,19 +1,27 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+export const supabase: SupabaseClient | null =
+  supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+
 if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables');
+  console.warn('Supabase not configured: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is missing. Using localStorage fallback.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+const getSupabase = () => {
+  if (!supabase) {
+    throw new Error('Supabase not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local');
+  }
+  return supabase;
+};
 
 // Helper functions for common operations
 export const supabaseHelpers = {
   // Users
   async getUser(id: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('users')
       .select('*')
       .eq('id', id)
@@ -23,7 +31,7 @@ export const supabaseHelpers = {
   },
 
   async updateUser(id: string, updates: any) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('users')
       .update(updates)
       .eq('id', id)
@@ -35,7 +43,7 @@ export const supabaseHelpers = {
 
   // Wallets
   async getWallets(userId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('wallets')
       .select('*')
       .eq('user_id', userId)
@@ -45,7 +53,7 @@ export const supabaseHelpers = {
   },
 
   async addWallet(userId: string, wallet: any) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('wallets')
       .insert([{ ...wallet, user_id: userId }])
       .select()
@@ -55,7 +63,7 @@ export const supabaseHelpers = {
   },
 
   async updateWallet(id: string, updates: any) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('wallets')
       .update(updates)
       .eq('id', id)
@@ -66,7 +74,7 @@ export const supabaseHelpers = {
   },
 
   async deleteWallet(id: string) {
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('wallets')
       .delete()
       .eq('id', id);
@@ -75,7 +83,7 @@ export const supabaseHelpers = {
 
   // Transactions
   async getTransactions(userId: string, limit = 100) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('transactions')
       .select('*')
       .eq('user_id', userId)
@@ -86,7 +94,7 @@ export const supabaseHelpers = {
   },
 
   async addTransaction(userId: string, transaction: any) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('transactions')
       .insert([{ ...transaction, user_id: userId }])
       .select()
@@ -96,7 +104,7 @@ export const supabaseHelpers = {
   },
 
   async updateTransaction(id: string, updates: any) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('transactions')
       .update(updates)
       .eq('id', id)
@@ -107,7 +115,7 @@ export const supabaseHelpers = {
   },
 
   async deleteTransaction(id: string) {
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('transactions')
       .delete()
       .eq('id', id);
@@ -116,7 +124,7 @@ export const supabaseHelpers = {
 
   // Budgets
   async getBudgets(userId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('budgets')
       .select('*')
       .eq('user_id', userId);
@@ -125,7 +133,7 @@ export const supabaseHelpers = {
   },
 
   async setBudget(userId: string, category: string, monthlyLimit: number, month: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('budgets')
       .upsert([
         {
@@ -142,7 +150,7 @@ export const supabaseHelpers = {
   },
 
   async deleteBudget(id: string) {
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('budgets')
       .delete()
       .eq('id', id);
@@ -151,7 +159,7 @@ export const supabaseHelpers = {
 
   // Chat Messages
   async getChatMessages(userId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('chat_messages')
       .select('*')
       .eq('user_id', userId)
@@ -161,7 +169,7 @@ export const supabaseHelpers = {
   },
 
   async addChatMessage(userId: string, message: any) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('chat_messages')
       .insert([{ ...message, user_id: userId }])
       .select()
@@ -171,7 +179,7 @@ export const supabaseHelpers = {
   },
 
   async clearChatHistory(userId: string) {
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('chat_messages')
       .delete()
       .eq('user_id', userId);
@@ -195,7 +203,7 @@ export const supabaseHelpers = {
   },
 
   async addAlert(userId: string, alert: any) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('alerts')
       .insert([{ ...alert, user_id: userId }])
       .select()
@@ -205,7 +213,7 @@ export const supabaseHelpers = {
   },
 
   async dismissAlert(id: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('alerts')
       .update({ read: true })
       .eq('id', id)
@@ -217,7 +225,7 @@ export const supabaseHelpers = {
 
   // Savings Accounts
   async getSavingsAccounts(userId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('savings_accounts')
       .select('*')
       .eq('user_id', userId)
@@ -227,7 +235,7 @@ export const supabaseHelpers = {
   },
 
   async addSavingsAccount(userId: string, account: any) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('savings_accounts')
       .insert([{ ...account, user_id: userId }])
       .select()
@@ -237,7 +245,7 @@ export const supabaseHelpers = {
   },
 
   async updateSavingsAccount(id: string, updates: any) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('savings_accounts')
       .update(updates)
       .eq('id', id)
@@ -248,7 +256,7 @@ export const supabaseHelpers = {
   },
 
   async deleteSavingsAccount(id: string) {
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('savings_accounts')
       .delete()
       .eq('id', id);
@@ -257,7 +265,7 @@ export const supabaseHelpers = {
 
   // Subscriptions
   async getSubscriptions(userId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('subscriptions')
       .select('*')
       .eq('user_id', userId)
@@ -267,7 +275,7 @@ export const supabaseHelpers = {
   },
 
   async addSubscription(userId: string, subscription: any) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('subscriptions')
       .insert([{ ...subscription, user_id: userId }])
       .select()
@@ -277,7 +285,7 @@ export const supabaseHelpers = {
   },
 
   async updateSubscription(id: string, updates: any) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('subscriptions')
       .update(updates)
       .eq('id', id)
@@ -288,7 +296,7 @@ export const supabaseHelpers = {
   },
 
   async deleteSubscription(id: string) {
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('subscriptions')
       .delete()
       .eq('id', id);
@@ -297,7 +305,7 @@ export const supabaseHelpers = {
 
   // BNPL Accounts
   async getBNPLAccounts(userId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('bnpl_accounts')
       .select('*')
       .eq('user_id', userId)
@@ -307,7 +315,7 @@ export const supabaseHelpers = {
   },
 
   async addBNPLAccount(userId: string, account: any) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('bnpl_accounts')
       .insert([{ ...account, user_id: userId }])
       .select()
@@ -317,7 +325,7 @@ export const supabaseHelpers = {
   },
 
   async updateBNPLAccount(id: string, updates: any) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('bnpl_accounts')
       .update(updates)
       .eq('id', id)
@@ -328,7 +336,7 @@ export const supabaseHelpers = {
   },
 
   async deleteBNPLAccount(id: string) {
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('bnpl_accounts')
       .delete()
       .eq('id', id);
@@ -337,7 +345,7 @@ export const supabaseHelpers = {
 
   // Categories
   async getCategories() {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('categories')
       .select('*');
     if (error) throw error;

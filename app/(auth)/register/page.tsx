@@ -14,6 +14,7 @@ export default function RegisterPage() {
   const { setUser } = useFinance();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -21,18 +22,56 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+
     try {
-      if (!email || !name) { setError('Please fill in all fields'); setIsLoading(false); return; }
+      if (!email || !name || !password) {
+        setError('Please fill in all fields');
+        return;
+      }
+
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) { setError('Please enter a valid email address'); setIsLoading(false); return; }
-      if (name.length < 2) { setError('Name must be at least 2 characters'); setIsLoading(false); return; }
-      const user: User = { id: `user_${Date.now()}`, email, name, createdAt: new Date() };
-      setUser(user);
+      if (!emailRegex.test(email)) {
+        setError('Please enter a valid email address');
+        return;
+      }
+
+      if (name.length < 2) {
+        setError('Name must be at least 2 characters');
+        return;
+      }
+
+      if (password.length < 6) {
+        setError('Password must be at least 6 characters');
+        return;
+      }
+
+      const { data, error } = await import('@/lib/supabase').then((m) =>
+        m.supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { name } },
+        })
+      );
+
+      if (error || !data.user) {
+        setError(error?.message ?? 'Registration failed. Please try again.');
+        return;
+      }
+
+      setUser({
+        id: data.user.id,
+        email: data.user.email ?? '',
+        name,
+        createdAt: new Date(),
+      });
+
       router.push('/onboarding');
     } catch (err) {
       setError('An error occurred. Please try again.');
       console.error(err);
-    } finally { setIsLoading(false); }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -81,6 +120,20 @@ export default function RegisterPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
                   className="pl-10 h-11 bg-muted/40 border-border/60 focus:bg-background"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="password" className="text-sm font-semibold">Password</label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                  className="h-11 bg-muted/40 border-border/60"
                 />
               </div>
             </div>
