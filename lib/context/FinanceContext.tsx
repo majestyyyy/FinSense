@@ -451,15 +451,34 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const addWallet = async (wallet: Omit<Wallet, 'id' | 'userId' | 'createdAt'>) => {
     if (!user) return;
 
+    const session = await supabase?.auth.getSession();
+    const activeUserId = session?.data?.session?.user?.id;
+
+    if (!activeUserId) {
+      console.warn('No Supabase session found; falling back to local storage for addWallet.');
+      const fallbackWallet: Wallet = {
+        ...wallet,
+        id: `wlt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        userId: user.id,
+        createdAt: new Date(),
+      };
+      setWallets((prev) => [...prev, fallbackWallet]);
+      return;
+    }
+
     try {
       const newWallet = await supabaseHelpers.addWallet(user.id, wallet);
       setWallets((prev) => [...prev, mapWallet(newWallet)]);
       return;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Supabase addWallet error:', error);
+
+      // If RLS policy rejected insert, fallback to local storage
+      if ((error as any)?.code === '42501' || (error as any)?.message?.includes?.('row-level security')) {
+        console.warn('RLS blocked addWallet; falling back to local storage.');
+      }
     }
 
-    // Fallback local operation
     const fallbackWallet: Wallet = {
       ...wallet,
       id: `wlt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
