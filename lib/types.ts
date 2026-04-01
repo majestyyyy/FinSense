@@ -17,6 +17,7 @@ export interface Wallet {
   name: string;
   balance: number;
   createdAt: Date;
+  updatedAt?: Date;
 }
 
 // Transaction Types

@@ -149,6 +149,17 @@ export const supabaseHelpers = {
     return data;
   },
 
+  async updateBudget(id: string, updates: any) {
+    const { data, error } = await getSupabase()
+      .from('budgets')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
   async deleteBudget(id: string) {
     const { error } = await getSupabase()
       .from('budgets')
@@ -188,7 +199,7 @@ export const supabaseHelpers = {
 
   // Alerts
   async getAlerts(userId: string, unreadOnly = false) {
-    let query = supabase
+    let query = getSupabase()
       .from('alerts')
       .select('*')
       .eq('user_id', userId);

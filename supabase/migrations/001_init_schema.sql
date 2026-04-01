@@ -240,6 +240,15 @@ CREATE POLICY "Users can view their own savings accounts" ON public.savings_acco
 CREATE POLICY "Users can insert their own savings accounts" ON public.savings_accounts
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+-- RLS for Categories (static reference data)
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read categories" ON public.categories
+  FOR SELECT USING (true);
+
+CREATE POLICY "No unauthenticated modifications on categories" ON public.categories
+  FOR INSERT, UPDATE, DELETE TO anon USING (false) WITH CHECK (false);
+
 CREATE POLICY "Users can update their own savings accounts" ON public.savings_accounts
   FOR UPDATE USING (auth.uid() = user_id);
 
