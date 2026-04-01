@@ -21,6 +21,7 @@ export default function LoginPage() {
   const { setUser } = useFinance();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -29,11 +30,25 @@ export default function LoginPage() {
     setError('');
     setIsLoading(true);
     try {
-      if (!email || !name) { setError('Please fill in all fields'); setIsLoading(false); return; }
+      if (!email || !password) { setError('Please fill in all fields'); return; }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) { setError('Please enter a valid email address'); setIsLoading(false); return; }
-      const user: User = { id: `user_${Date.now()}`, email, name, createdAt: new Date() };
-      setUser(user);
+      if (!emailRegex.test(email)) { setError('Please enter a valid email address'); return; }
+
+      const { data, error } = await import('@/lib/supabase').then((m) =>
+        m.supabase.auth.signInWithPassword({ email, password })
+      );
+
+      if (error || !data.user) {
+        setError(error?.message ?? 'Login failed.');
+        return;
+      }
+
+      setUser({
+        id: data.user.id,
+        email: data.user.email ?? '',
+        name: name || '',
+        createdAt: new Date(),
+      });
       router.push('/onboarding');
     } catch (err) {
       setError('An error occurred. Please try again.');
@@ -130,6 +145,20 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
                   className="pl-10 h-11 bg-muted/40 border-border/60 focus:bg-background"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="password" className="text-sm font-semibold">Password</label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                  className="h-11 bg-muted/40 border-border/60"
                 />
               </div>
             </div>

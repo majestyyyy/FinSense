@@ -15,6 +15,7 @@ import {
   BNPLAccount,
   SavingsAccount,
 } from '@/lib/types';
+import { supabase, supabaseHelpers } from '@/lib/supabase';
 
 interface FinanceContextType {
   // User
@@ -24,33 +25,33 @@ interface FinanceContextType {
 
   // Wallets
   wallets: Wallet[];
-  addWallet: (wallet: Omit<Wallet, 'id' | 'userId' | 'createdAt'>) => void;
-  updateWallet: (id: string, updates: Partial<Wallet>) => void;
-  deleteWallet: (id: string) => void;
+  addWallet: (wallet: Omit<Wallet, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
+  updateWallet: (id: string, updates: Partial<Wallet>) => Promise<void>;
+  deleteWallet: (id: string) => Promise<void>;
   totalWalletBalance: number;
   completeSetup: () => void;
 
   // Transactions
   transactions: Transaction[];
-  addTransaction: (transaction: Omit<Transaction, 'id' | 'userId' | 'createdAt'>) => void;
-  updateTransaction: (id: string, transaction: Partial<Transaction>) => void;
-  deleteTransaction: (id: string) => void;
+  addTransaction: (transaction: Omit<Transaction, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
+  updateTransaction: (id: string, transaction: Partial<Transaction>) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
 
   // Budgets
   budgets: Budget[];
-  setBudget: (category: string, limit: number) => void;
-  updateBudget: (id: string, limit: number) => void;
-  deleteBudget: (id: string) => void;
+  setBudget: (category: string, limit: number) => Promise<void>;
+  updateBudget: (id: string, limit: number) => Promise<void>;
+  deleteBudget: (id: string) => Promise<void>;
 
   // Chat Messages
   chatMessages: ChatMessage[];
-  addChatMessage: (message: Omit<ChatMessage, 'id' | 'userId' | 'timestamp'>) => void;
-  clearChatHistory: () => void;
+  addChatMessage: (message: Omit<ChatMessage, 'id' | 'userId' | 'timestamp'>) => Promise<void>;
+  clearChatHistory: () => Promise<void>;
 
   // Alerts
   alerts: Alert[];
-  addAlert: (alert: Omit<Alert, 'id' | 'userId' | 'createdAt'>) => void;
-  dismissAlert: (id: string) => void;
+  addAlert: (alert: Omit<Alert, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
+  dismissAlert: (id: string) => Promise<void>;
 
   // Categories
   categories: Category[];
@@ -64,23 +65,23 @@ interface FinanceContextType {
 
   // Subscriptions
   subscriptions: Subscription[];
-  addSubscription: (sub: Omit<Subscription, 'id' | 'userId' | 'createdAt'>) => void;
-  updateSubscription: (id: string, updates: Partial<Subscription>) => void;
-  deleteSubscription: (id: string) => void;
+  addSubscription: (sub: Omit<Subscription, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
+  updateSubscription: (id: string, updates: Partial<Subscription>) => Promise<void>;
+  deleteSubscription: (id: string) => Promise<void>;
   totalMonthlySubscriptions: number;
 
   // BNPL
   bnplAccounts: BNPLAccount[];
-  addBNPLAccount: (account: Omit<BNPLAccount, 'id' | 'userId' | 'createdAt'>) => void;
-  updateBNPLAccount: (id: string, updates: Partial<BNPLAccount>) => void;
-  deleteBNPLAccount: (id: string) => void;
+  addBNPLAccount: (account: Omit<BNPLAccount, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
+  updateBNPLAccount: (id: string, updates: Partial<BNPLAccount>) => Promise<void>;
+  deleteBNPLAccount: (id: string) => Promise<void>;
   totalBNPLDebt: number;
 
   // Savings
   savingsAccounts: SavingsAccount[];
-  addSavingsAccount: (account: Omit<SavingsAccount, 'id' | 'userId' | 'createdAt'>) => void;
-  updateSavingsAccount: (id: string, updates: Partial<SavingsAccount>) => void;
-  deleteSavingsAccount: (id: string) => void;
+  addSavingsAccount: (account: Omit<SavingsAccount, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
+  updateSavingsAccount: (id: string, updates: Partial<SavingsAccount>) => Promise<void>;
+  deleteSavingsAccount: (id: string) => Promise<void>;
   totalSavings: number;
 }
 
@@ -97,6 +98,98 @@ const DEFAULT_CATEGORIES: Category[] = [
   { id: 'savings', name: 'Savings', icon: '🏦', color: '#FDCB6E' },
   { id: 'other', name: 'Other', icon: '📌', color: '#DFE6E9' },
 ];
+
+const mapWallet = (row: any): Wallet => ({
+  id: row.id,
+  userId: row.user_id,
+  type: row.type,
+  name: row.name,
+  balance: Number(row.balance),
+  createdAt: new Date(row.created_at ?? row.createdAt),
+  updatedAt: new Date(row.updated_at ?? row.updatedAt),
+});
+
+const mapTransaction = (row: any): Transaction => ({
+  id: row.id,
+  userId: row.user_id,
+  type: row.type,
+  amount: Number(row.amount),
+  category: row.category,
+  description: row.description ?? '',
+  date: new Date(row.date ?? row.date),
+  createdAt: new Date(row.created_at ?? row.createdAt),
+});
+
+const mapBudget = (row: any): Budget => ({
+  id: row.id,
+  userId: row.user_id,
+  category: row.category,
+  monthlyLimit: Number(row.monthly_limit ?? row.monthlyLimit),
+  month: row.month,
+  createdAt: new Date(row.created_at ?? row.createdAt),
+  updatedAt: new Date(row.updated_at ?? row.updatedAt),
+});
+
+const mapChatMessage = (row: any): ChatMessage => ({
+  id: row.id,
+  userId: row.user_id,
+  role: row.role,
+  content: row.content,
+  timestamp: new Date(row.timestamp ?? row.timestamp),
+});
+
+const mapAlert = (row: any): Alert => ({
+  id: row.id,
+  userId: row.user_id,
+  type: row.type,
+  title: row.title,
+  message: row.message,
+  category: row.category,
+  severity: row.severity,
+  read: Boolean(row.read),
+  createdAt: new Date(row.created_at ?? row.createdAt),
+});
+
+const mapSubscription = (row: any): Subscription => ({
+  id: row.id,
+  userId: row.user_id,
+  name: row.name,
+  amount: Number(row.amount),
+  billingCycle: row.billing_cycle || row.billingCycle,
+  nextBillingDate: row.next_billing_date || row.nextBillingDate,
+  category: row.category,
+  color: row.color,
+  isActive: Boolean(row.is_active ?? row.isActive),
+  createdAt: new Date(row.created_at ?? row.createdAt),
+});
+
+const mapBNPLAccount = (row: any): BNPLAccount => ({
+  id: row.id,
+  userId: row.user_id,
+  provider: row.provider,
+  name: row.name,
+  creditLimit: Number(row.credit_limit ?? row.creditLimit),
+  usedCredit: Number(row.used_credit ?? row.usedCredit),
+  dueDate: row.due_date || row.dueDate,
+  minimumPayment: Number((row.minimum_payment ?? row.minimumPayment) || 0),
+  monthlyInstallment: Number((row.monthly_installment ?? row.monthlyInstallment) || 0),
+  isActive: Boolean(row.is_active ?? row.isActive),
+  createdAt: new Date(row.created_at ?? row.createdAt),
+});
+
+const mapSavingsAccount = (row: any): SavingsAccount => ({
+  id: row.id,
+  userId: row.user_id,
+  name: row.name,
+  bankName: row.bank_name ?? row.bankName,
+  balance: Number(row.balance),
+  principal: Number(row.principal),
+  interestRatePA: Number(row.interest_rate_pa ?? row.interestRatePA),
+  lastInterestDate: row.last_interest_date ?? row.lastInterestDate,
+  color: row.color,
+  notes: row.notes,
+  createdAt: new Date(row.created_at ?? row.createdAt),
+});
 
 const STORAGE_KEY_USER = 'finance_user';
 const STORAGE_KEY_TRANSACTIONS = 'finance_transactions';
@@ -120,7 +213,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [savingsAccounts, setSavingsAccounts] = useState<SavingsAccount[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Load from localStorage on mount
+  // Load from localStorage and Supabase on mount
   useEffect(() => {
     const loadFromStorage = () => {
       try {
@@ -202,12 +295,73 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
           setSavingsAccounts(parsed.map((s: any) => ({ ...s, createdAt: new Date(s.createdAt) })));
         }
       } catch (error) {
-        console.error('Error loading from storage:', error);
+        console.error('Error loading from localStorage:', error);
       }
-      setIsHydrated(true);
+    };
+
+    const loadFromSupabase = async () => {
+      try {
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase?.auth.getSession() ?? { data: { session: null }, error: null };
+
+        if (sessionError) {
+          console.error('Supabase session error:', sessionError);
+          return;
+        }
+
+        if (!session || !session.user || !session.user.id) {
+          console.log('Supabase session missing, continuing with local storage mode.');
+          return;
+        }
+
+        const authUser = session.user;
+
+        const profile = await supabaseHelpers.getUser(authUser.id).catch((e) => {
+          console.warn('Supabase getUser fallback for profile:', e);
+          return null;
+        });
+
+        if (profile) {
+          setUser({
+            id: profile.id,
+            email: profile.email,
+            name: profile.name ?? '',
+            setupComplete: profile.setup_complete ?? false,
+            createdAt: profile.created_at ? new Date(profile.created_at) : new Date(),
+          });
+        }
+
+        const [loadedWallets, loadedTransactions, loadedBudgets, loadedChatMessages, loadedAlerts, loadedSubscriptions, loadedBNPLAccounts, loadedSavingsAccounts] =
+          await Promise.all([
+            supabaseHelpers.getWallets(authUser.id).catch(() => []),
+            supabaseHelpers.getTransactions(authUser.id).catch(() => []),
+            supabaseHelpers.getBudgets(authUser.id).catch(() => []),
+            supabaseHelpers.getChatMessages(authUser.id).catch(() => []),
+            supabaseHelpers.getAlerts(authUser.id).catch(() => []),
+            supabaseHelpers.getSubscriptions(authUser.id).catch(() => []),
+            supabaseHelpers.getBNPLAccounts(authUser.id).catch(() => []),
+            supabaseHelpers.getSavingsAccounts(authUser.id).catch(() => []),
+          ]);
+
+        setWallets(loadedWallets.map(mapWallet));
+        setTransactions(loadedTransactions.map(mapTransaction));
+        setBudgets(loadedBudgets.map(mapBudget));
+        setChatMessages(loadedChatMessages.map(mapChatMessage));
+        setAlerts(loadedAlerts.map(mapAlert));
+        setSubscriptions(loadedSubscriptions.map(mapSubscription));
+        setBNPLAccounts(loadedBNPLAccounts.map(mapBNPLAccount));
+        setSavingsAccounts(loadedSavingsAccounts.map(mapSavingsAccount));
+      } catch (error) {
+        console.error('Supabase load error:', error);
+      } finally {
+        setIsHydrated(true);
+      }
     };
 
     loadFromStorage();
+    loadFromSupabase();
   }, []);
 
   // Save user to localStorage
@@ -217,12 +371,19 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
         localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
       } else {
         localStorage.removeItem(STORAGE_KEY_USER);
-        // Clear wallets when user logs out
         localStorage.removeItem(STORAGE_KEY_WALLETS);
+        localStorage.removeItem(STORAGE_KEY_TRANSACTIONS);
+        localStorage.removeItem(STORAGE_KEY_BUDGETS);
+        localStorage.removeItem(STORAGE_KEY_CHAT);
+        localStorage.removeItem(STORAGE_KEY_ALERTS);
         localStorage.removeItem(STORAGE_KEY_SUBSCRIPTIONS);
         localStorage.removeItem(STORAGE_KEY_BNPL);
         localStorage.removeItem(STORAGE_KEY_SAVINGS);
         setWallets([]);
+        setTransactions([]);
+        setBudgets([]);
+        setChatMessages([]);
+        setAlerts([]);
         setSubscriptions([]);
         setBNPLAccounts([]);
         setSavingsAccounts([]);
@@ -287,23 +448,66 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [savingsAccounts, isHydrated]);
 
   // Wallet operations
-  const addWallet = (wallet: Omit<Wallet, 'id' | 'userId' | 'createdAt'>) => {
+  const addWallet = async (wallet: Omit<Wallet, 'id' | 'userId' | 'createdAt'>) => {
     if (!user) return;
-    const newWallet: Wallet = {
+
+    const session = await supabase?.auth.getSession();
+    const activeUserId = session?.data?.session?.user?.id;
+
+    if (!activeUserId) {
+      console.warn('No Supabase session found; falling back to local storage for addWallet.');
+      const fallbackWallet: Wallet = {
+        ...wallet,
+        id: `wlt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        userId: user.id,
+        createdAt: new Date(),
+      };
+      setWallets((prev) => [...prev, fallbackWallet]);
+      return;
+    }
+
+    try {
+      const newWallet = await supabaseHelpers.addWallet(user.id, wallet);
+      setWallets((prev) => [...prev, mapWallet(newWallet)]);
+      return;
+    } catch (error: unknown) {
+      console.error('Supabase addWallet error:', error);
+
+      // If RLS policy rejected insert, fallback to local storage
+      if ((error as any)?.code === '42501' || (error as any)?.message?.includes?.('row-level security')) {
+        console.warn('RLS blocked addWallet; falling back to local storage.');
+      }
+    }
+
+    const fallbackWallet: Wallet = {
       ...wallet,
       id: `wlt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       userId: user.id,
       createdAt: new Date(),
     };
-    setWallets((prev) => [...prev, newWallet]);
+    setWallets((prev) => [...prev, fallbackWallet]);
   };
 
-  const updateWallet = (id: string, updates: Partial<Wallet>) => {
-    setWallets((prev) => prev.map((w) => (w.id === id ? { ...w, ...updates } : w)));
+  const updateWallet = async (id: string, updates: Partial<Wallet>) => {
+    try {
+      const updated = await supabaseHelpers.updateWallet(id, updates);
+      setWallets((prev) => prev.map((w) => (w.id === id ? mapWallet(updated) : w)));
+      return;
+    } catch (error) {
+      console.error('Supabase updateWallet error:', error);
+      setWallets((prev) => prev.map((w) => (w.id === id ? { ...w, ...updates } : w)));
+    }
   };
 
-  const deleteWallet = (id: string) => {
-    setWallets((prev) => prev.filter((w) => w.id !== id));
+  const deleteWallet = async (id: string) => {
+    try {
+      await supabaseHelpers.deleteWallet(id);
+      setWallets((prev) => prev.filter((w) => w.id !== id));
+      return;
+    } catch (error) {
+      console.error('Supabase deleteWallet error:', error);
+      setWallets((prev) => prev.filter((w) => w.id !== id));
+    }
   };
 
   const completeSetup = () => {
@@ -314,31 +518,49 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   // Transaction operations
-  const addTransaction = (transaction: Omit<Transaction, 'id' | 'userId' | 'createdAt'>) => {
+  const addTransaction = async (transaction: Omit<Transaction, 'id' | 'userId' | 'createdAt'>) => {
     if (!user) return;
+    try {
+      const newTransaction = await supabaseHelpers.addTransaction(user.id, transaction);
+      setTransactions((prev) => [...prev, mapTransaction(newTransaction)]);
+      return;
+    } catch (error) {
+      console.error('Supabase addTransaction error:', error);
+    }
 
-    const newTransaction: Transaction = {
+    const fallbackTransaction: Transaction = {
       ...transaction,
       id: `txn_${Date.now()}`,
       userId: user.id,
       createdAt: new Date(),
     };
-
-    setTransactions((prev) => [...prev, newTransaction]);
+    setTransactions((prev) => [...prev, fallbackTransaction]);
   };
 
-  const updateTransaction = (id: string, updates: Partial<Transaction>) => {
-    setTransactions((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
-    );
+  const updateTransaction = async (id: string, updates: Partial<Transaction>) => {
+    try {
+      const updated = await supabaseHelpers.updateTransaction(id, updates);
+      setTransactions((prev) => prev.map((t) => (t.id === id ? mapTransaction(updated) : t)));
+      return;
+    } catch (error) {
+      console.error('Supabase updateTransaction error:', error);
+      setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
+    }
   };
 
-  const deleteTransaction = (id: string) => {
-    setTransactions((prev) => prev.filter((t) => t.id !== id));
+  const deleteTransaction = async (id: string) => {
+    try {
+      await supabaseHelpers.deleteTransaction(id);
+      setTransactions((prev) => prev.filter((t) => t.id !== id));
+      return;
+    } catch (error) {
+      console.error('Supabase deleteTransaction error:', error);
+      setTransactions((prev) => prev.filter((t) => t.id !== id));
+    }
   };
 
   // Budget operations
-  const setBudget = (category: string, limit: number) => {
+  const setBudget = async (category: string, limit: number) => {
     if (!user) return;
 
     const currentMonth = new Date().toISOString().slice(0, 7);
@@ -347,67 +569,120 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     );
 
     if (existingBudget) {
-      updateBudget(existingBudget.id, limit);
-    } else {
-      const newBudget: Budget = {
-        id: `bgt_${Date.now()}`,
-        userId: user.id,
-        category,
-        monthlyLimit: limit,
-        month: currentMonth,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      setBudgets((prev) => [...prev, newBudget]);
+      await updateBudget(existingBudget.id, limit);
+      return;
+    }
+
+    try {
+      const newBudget = await supabaseHelpers.setBudget(user.id, category, limit, currentMonth);
+      setBudgets((prev) => [...prev, mapBudget(newBudget)]);
+      return;
+    } catch (error) {
+      console.error('Supabase setBudget error:', error);
+    }
+
+    const fallbackBudget: Budget = {
+      id: `bgt_${Date.now()}`,
+      userId: user.id,
+      category,
+      monthlyLimit: limit,
+      month: currentMonth,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    setBudgets((prev) => [...prev, fallbackBudget]);
+  };
+
+  const updateBudget = async (id: string, limit: number) => {
+    try {
+      const updated = await supabaseHelpers.updateBudget(id, { monthly_limit: limit });
+      setBudgets((prev) =>
+        prev.map((b) =>
+          b.id === id ? mapBudget(updated) : b
+        )
+      );
+      return;
+    } catch (error) {
+      console.error('Supabase updateBudget error:', error);
+      setBudgets((prev) =>
+        prev.map((b) =>
+          b.id === id ? { ...b, monthlyLimit: limit, updatedAt: new Date() } : b
+        )
+      );
     }
   };
 
-  const updateBudget = (id: string, limit: number) => {
-    setBudgets((prev) =>
-      prev.map((b) =>
-        b.id === id ? { ...b, monthlyLimit: limit, updatedAt: new Date() } : b
-      )
-    );
-  };
-
-  const deleteBudget = (id: string) => {
-    setBudgets((prev) => prev.filter((b) => b.id !== id));
+  const deleteBudget = async (id: string) => {
+    try {
+      await supabaseHelpers.deleteBudget(id);
+      setBudgets((prev) => prev.filter((b) => b.id !== id));
+      return;
+    } catch (error) {
+      console.error('Supabase deleteBudget error:', error);
+      setBudgets((prev) => prev.filter((b) => b.id !== id));
+    }
   };
 
   // Chat operations
-  const addChatMessage = (message: Omit<ChatMessage, 'id' | 'userId' | 'timestamp'>) => {
+  const addChatMessage = async (message: Omit<ChatMessage, 'id' | 'userId' | 'timestamp'>) => {
     if (!user) return;
 
-    const newMessage: ChatMessage = {
+    try {
+      const newMessage = await supabaseHelpers.addChatMessage(user.id, message);
+      setChatMessages((prev) => [...prev, mapChatMessage(newMessage)]);
+      return;
+    } catch (error) {
+      console.error('Supabase addChatMessage error:', error);
+    }
+
+    const fallbackMessage: ChatMessage = {
       ...message,
       id: `msg_${Date.now()}`,
       userId: user.id,
       timestamp: new Date(),
     };
-
-    setChatMessages((prev) => [...prev, newMessage]);
+    setChatMessages((prev) => [...prev, fallbackMessage]);
   };
 
-  const clearChatHistory = () => {
+  const clearChatHistory = async () => {
+    try {
+      await supabaseHelpers.clearChatHistory(user?.id ?? '');
+    } catch (error) {
+      console.error('Supabase clearChatHistory error:', error);
+    }
     setChatMessages([]);
   };
 
   // Alert operations
-  const addAlert = (alert: Omit<Alert, 'id' | 'userId' | 'createdAt'>) => {
+  const addAlert = async (alert: Omit<Alert, 'id' | 'userId' | 'createdAt'>) => {
     if (!user) return;
 
-    const newAlert: Alert = {
+    try {
+      const newAlert = await supabaseHelpers.addAlert(user.id, alert);
+      setAlerts((prev) => [...prev, mapAlert(newAlert)]);
+      return;
+    } catch (error) {
+      console.error('Supabase addAlert error:', error);
+    }
+
+    const fallbackAlert: Alert = {
       ...alert,
       id: `alt_${Date.now()}`,
       userId: user.id,
       createdAt: new Date(),
     };
-
-    setAlerts((prev) => [...prev, newAlert]);
+    setAlerts((prev) => [...prev, fallbackAlert]);
   };
 
-  const dismissAlert = (id: string) => {
-    setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, read: true } : a)));
+  const dismissAlert = async (id: string) => {
+    try {
+      await supabaseHelpers.dismissAlert(id);
+      setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, read: true } : a)));
+      return;
+    } catch (error) {
+      console.error('Supabase dismissAlert error:', error);
+      setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, read: true } : a)));
+    }
   };
 
   // Total wallet balance
@@ -534,22 +809,46 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const financialSummary = calculateFinancialSummary();
 
   // Subscription operations
-  const addSubscription = (sub: Omit<Subscription, 'id' | 'userId' | 'createdAt'>) => {
-    const newSub: Subscription = {
+  const addSubscription = async (sub: Omit<Subscription, 'id' | 'userId' | 'createdAt'>) => {
+    if (!user) return;
+
+    try {
+      const newSub = await supabaseHelpers.addSubscription(user.id, sub);
+      setSubscriptions((prev) => [...prev, mapSubscription(newSub)]);
+      return;
+    } catch (error) {
+      console.error('Supabase addSubscription error:', error);
+    }
+
+    const fallbackSub: Subscription = {
       ...sub,
       id: `sub_${Date.now()}`,
-      userId: user?.id ?? '',
+      userId: user.id,
       createdAt: new Date(),
     };
-    setSubscriptions((prev) => [...prev, newSub]);
+    setSubscriptions((prev) => [...prev, fallbackSub]);
   };
 
-  const updateSubscription = (id: string, updates: Partial<Subscription>) => {
-    setSubscriptions((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+  const updateSubscription = async (id: string, updates: Partial<Subscription>) => {
+    try {
+      const updated = await supabaseHelpers.updateSubscription(id, updates);
+      setSubscriptions((prev) => prev.map((s) => (s.id === id ? updated : s)));
+      return;
+    } catch (error) {
+      console.error('Supabase updateSubscription error:', error);
+      setSubscriptions((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+    }
   };
 
-  const deleteSubscription = (id: string) => {
-    setSubscriptions((prev) => prev.filter((s) => s.id !== id));
+  const deleteSubscription = async (id: string) => {
+    try {
+      await supabaseHelpers.deleteSubscription(id);
+      setSubscriptions((prev) => prev.filter((s) => s.id !== id));
+      return;
+    } catch (error) {
+      console.error('Supabase deleteSubscription error:', error);
+      setSubscriptions((prev) => prev.filter((s) => s.id !== id));
+    }
   };
 
   const totalMonthlySubscriptions = subscriptions
@@ -563,22 +862,46 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     }, 0);
 
   // BNPL operations
-  const addBNPLAccount = (account: Omit<BNPLAccount, 'id' | 'userId' | 'createdAt'>) => {
-    const newAccount: BNPLAccount = {
+  const addBNPLAccount = async (account: Omit<BNPLAccount, 'id' | 'userId' | 'createdAt'>) => {
+    if (!user) return;
+
+    try {
+      const newAccount = await supabaseHelpers.addBNPLAccount(user.id, account);
+      setBNPLAccounts((prev) => [...prev, mapBNPLAccount(newAccount)]);
+      return;
+    } catch (error) {
+      console.error('Supabase addBNPLAccount error:', error);
+    }
+
+    const fallbackAccount: BNPLAccount = {
       ...account,
       id: `bnpl_${Date.now()}`,
-      userId: user?.id ?? '',
+      userId: user.id,
       createdAt: new Date(),
     };
-    setBNPLAccounts((prev) => [...prev, newAccount]);
+    setBNPLAccounts((prev) => [...prev, fallbackAccount]);
   };
 
-  const updateBNPLAccount = (id: string, updates: Partial<BNPLAccount>) => {
-    setBNPLAccounts((prev) => prev.map((b) => (b.id === id ? { ...b, ...updates } : b)));
+  const updateBNPLAccount = async (id: string, updates: Partial<BNPLAccount>) => {
+    try {
+      const updated = await supabaseHelpers.updateBNPLAccount(id, updates);
+      setBNPLAccounts((prev) => prev.map((b) => (b.id === id ? updated : b)));
+      return;
+    } catch (error) {
+      console.error('Supabase updateBNPLAccount error:', error);
+      setBNPLAccounts((prev) => prev.map((b) => (b.id === id ? { ...b, ...updates } : b)));
+    }
   };
 
-  const deleteBNPLAccount = (id: string) => {
-    setBNPLAccounts((prev) => prev.filter((b) => b.id !== id));
+  const deleteBNPLAccount = async (id: string) => {
+    try {
+      await supabaseHelpers.deleteBNPLAccount(id);
+      setBNPLAccounts((prev) => prev.filter((b) => b.id !== id));
+      return;
+    } catch (error) {
+      console.error('Supabase deleteBNPLAccount error:', error);
+      setBNPLAccounts((prev) => prev.filter((b) => b.id !== id));
+    }
   };
 
   const totalBNPLDebt = bnplAccounts
@@ -607,22 +930,46 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [isHydrated]);
 
   // Savings CRUD
-  const addSavingsAccount = (account: Omit<SavingsAccount, 'id' | 'userId' | 'createdAt'>) => {
-    const newAcc: SavingsAccount = {
+  const addSavingsAccount = async (account: Omit<SavingsAccount, 'id' | 'userId' | 'createdAt'>) => {
+    if (!user) return;
+
+    try {
+      const newAcc = await supabaseHelpers.addSavingsAccount(user.id, account);
+      setSavingsAccounts((prev) => [...prev, mapSavingsAccount(newAcc)]);
+      return;
+    } catch (error) {
+      console.error('Supabase addSavingsAccount error:', error);
+    }
+
+    const fallbackAcc: SavingsAccount = {
       ...account,
       id: `sav_${Date.now()}`,
-      userId: user?.id ?? '',
+      userId: user.id,
       createdAt: new Date(),
     };
-    setSavingsAccounts((prev) => [...prev, newAcc]);
+    setSavingsAccounts((prev) => [...prev, fallbackAcc]);
   };
 
-  const updateSavingsAccount = (id: string, updates: Partial<SavingsAccount>) => {
-    setSavingsAccounts((prev) => prev.map((a) => (a.id === id ? { ...a, ...updates } : a)));
+  const updateSavingsAccount = async (id: string, updates: Partial<SavingsAccount>) => {
+    try {
+      const updated = await supabaseHelpers.updateSavingsAccount(id, updates);
+      setSavingsAccounts((prev) => prev.map((a) => (a.id === id ? updated : a)));
+      return;
+    } catch (error) {
+      console.error('Supabase updateSavingsAccount error:', error);
+      setSavingsAccounts((prev) => prev.map((a) => (a.id === id ? { ...a, ...updates } : a)));
+    }
   };
 
-  const deleteSavingsAccount = (id: string) => {
-    setSavingsAccounts((prev) => prev.filter((a) => a.id !== id));
+  const deleteSavingsAccount = async (id: string) => {
+    try {
+      await supabaseHelpers.deleteSavingsAccount(id);
+      setSavingsAccounts((prev) => prev.filter((a) => a.id !== id));
+      return;
+    } catch (error) {
+      console.error('Supabase deleteSavingsAccount error:', error);
+      setSavingsAccounts((prev) => prev.filter((a) => a.id !== id));
+    }
   };
 
   const totalSavings = savingsAccounts

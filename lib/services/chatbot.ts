@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { FinancialSummary } from '@/lib/types';
 
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY ?? '');
+// Using Gemini 2.5 Flash for faster, more intelligent financial advice
 const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 interface ChatRequest {
   message: string;
@@ -30,7 +31,6 @@ ${financialData ? `Here is the user's current financial data:
 Keep responses concise (under 200 words). Use bullet points when listing tips. Be specific to the user's data when available.`;
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
     const result = await model.generateContent(`${systemContext}\n\nUser: ${message}`);
     const text = result.response.text();
 
