@@ -45,13 +45,14 @@ export default function RegisterPage() {
         return;
       }
 
-      const { data, error } = await import('@/lib/supabase').then((m) =>
-        m.supabase.auth.signUp({
-          email,
-          password,
-          options: { data: { name } },
-        })
-      );
+      const { supabase, supabaseHelpers } = await import('@/lib/supabase');
+      if (!supabase) throw new Error('Supabase client not configured');
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { name } },
+      });
 
       if (error || !data.user) {
         setError(error?.message ?? 'Registration failed. Please try again.');
@@ -63,7 +64,16 @@ export default function RegisterPage() {
         email: data.user.email ?? '',
         name,
         createdAt: new Date(),
+        setupComplete: false,
       });
+
+      if (data?.user) {
+        try {
+          await supabaseHelpers.upsertUser(data.user.id, { email: data.user.email ?? '', name, setup_complete: false });
+        } catch (err) {
+          console.warn('Could not create user profile row:', err);
+        }
+      }
 
       router.push('/onboarding');
     } catch (err) {

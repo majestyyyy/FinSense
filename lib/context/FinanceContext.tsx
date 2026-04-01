@@ -351,6 +351,15 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
             setupComplete: profile.setup_complete ?? false,
             createdAt: profile.created_at ? new Date(profile.created_at) : new Date(),
           });
+        } else {
+          // If no profile row yet, still set user from auth session so app doesn't lose state
+          setUser({
+            id: authUser.id,
+            email: authUser.email ?? '',
+            name: authUser.user_metadata?.name ?? '',
+            setupComplete: false,
+            createdAt: new Date(),
+          });
         }
 
         const [loadedWallets, loadedTransactions, loadedBudgets, loadedChatMessages, loadedAlerts, loadedSubscriptions, loadedBNPLAccounts, loadedSavingsAccounts] =
@@ -530,10 +539,16 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
-  const completeSetup = () => {
+  const completeSetup = async () => {
     if (user) {
       const updatedUser = { ...user, setupComplete: true };
       setUser(updatedUser);
+
+      try {
+        await supabaseHelpers.updateUser(user.id, { setup_complete: true });
+      } catch (error) {
+        console.warn('Failed to persist setupComplete to Supabase:', error);
+      }
     }
   };
 

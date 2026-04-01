@@ -94,7 +94,19 @@ export default function MainLayout({
               <p className="text-[10px] text-muted-foreground truncate leading-tight">{user?.email}</p>
             </div>
             <button
-              onClick={() => { setUser(null); router.push('/login'); }}
+              onClick={async () => {
+                try {
+                  const { supabase } = await import('@/lib/supabase');
+                  if (supabase) {
+                    await supabase.auth.signOut();
+                  }
+                } catch (err) {
+                  console.warn('Error signing out:', err);
+                } finally {
+                  setUser(null);
+                  router.push('/login');
+                }
+              }}
               className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-destructive/10 hover:text-destructive"
               title="Sign out"
             >

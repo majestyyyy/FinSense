@@ -41,6 +41,16 @@ export const supabaseHelpers = {
     return data;
   },
 
+  async upsertUser(id: string, user: { email: string; name?: string; setup_complete?: boolean }) {
+    const { data, error } = await getSupabase()
+      .from('users')
+      .upsert({ id, email: user.email, name: user.name || null, setup_complete: user.setup_complete ?? false })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
   // Wallets
   async getWallets(userId: string) {
     const { data, error } = await getSupabase()

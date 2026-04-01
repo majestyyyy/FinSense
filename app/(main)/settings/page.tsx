@@ -40,8 +40,20 @@ export default function SettingsPage() {
   const { resolvedTheme, setTheme } = useTheme();
   const userWallets = wallets.filter((w) => w.userId === user?.id);
 
-  const handleLogout = () => { setUser(null); router.push('/login'); };
-  const handleClearData = () => { setUser(null); setDeleteDialogOpen(false); router.push('/login'); };
+  const handleLogout = async () => {
+    const supabase = (await import('@/lib/supabase')).supabase;
+    if (supabase) {
+      await supabase.auth.signOut().catch((err) => console.warn('Supabase signOut error:', err));
+    }
+    setUser(null);
+    router.push('/login');
+  };
+
+  const handleClearData = () => {
+    // preserve server data; this only logs out and clears local state
+    handleLogout();
+    setDeleteDialogOpen(false);
+  };
 
   const handleExportData = () => {
     const exportData = { user, transactions, budgets, chatMessages, wallets, exportDate: new Date().toISOString() };

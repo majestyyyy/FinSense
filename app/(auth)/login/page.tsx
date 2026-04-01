@@ -33,7 +33,7 @@ export default function LoginPage() {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) { setError('Please enter a valid email address'); return; }
 
-      const { supabase } = await import('@/lib/supabase');
+      const { supabase, supabaseHelpers } = await import('@/lib/supabase');
       if (!supabase) throw new Error('Supabase client not configured');
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
@@ -42,13 +42,25 @@ export default function LoginPage() {
         return;
       }
 
+      const userId = data.user.id;
+      const profile = await supabaseHelpers.getUser(userId).catch(() => null);
+      const existingWallets = await supabaseHelpers.getWallets(userId).catch(() => []);
+
+      const setupComplete = Boolean(profile?.setup_complete) || existingWallets.length > 0;
+
       setUser({
-        id: data.user.id,
+        id: userId,
         email: data.user.email ?? '',
-        name: data.user.user_metadata?.name ?? '',
+        name: profile?.name ?? data.user.user_metadata?.name ?? '',
         createdAt: new Date(),
+        setupComplete,
       });
-      router.push('/onboarding');
+
+      if (setupComplete) {
+        router.push('/dashboard');
+      } else {
+        router.push('/onboarding');
+      }
     } catch (err) {
       setError('An error occurred. Please try again.');
       console.error(err);
