@@ -70,7 +70,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left panel — branding */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-emerald-800 via-emerald-950 to-black flex-col justify-between p-12">
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-linear-to-br from-emerald-800 via-emerald-950 to-black flex-col justify-between p-12">
         {/* Mesh blobs */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 left-0 w-80 h-80 rounded-full bg-white/5 -translate-x-1/3 -translate-y-1/3 blur-3xl" />
@@ -116,7 +116,7 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center bg-background px-6 py-12">
         {/* Mobile logo */}
         <div className="absolute top-6 left-6 flex items-center gap-2 lg:hidden">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-xl bg-linear-to-br from-primary to-primary/60 flex items-center justify-center">
             <TrendingUp className="w-4 h-4 text-primary-foreground" />
           </div>
           <span className="font-bold text-base text-gradient">FinSense</span>
@@ -167,7 +167,7 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full h-12 text-base font-semibold bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90 shadow-lg shadow-primary/25 transition-all rounded-xl"
+              className="w-full h-12 text-base font-semibold bg-linear-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90 shadow-lg shadow-primary/25 transition-all rounded-xl"
               disabled={isLoading}
             >
               {isLoading ? (

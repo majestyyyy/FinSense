@@ -46,7 +46,7 @@ export default function DashboardPage() {
       {/* Hero Card */}
       <div className="relative overflow-hidden rounded-2xl shadow-xl glow-primary">
         {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-emerald-800 to-black" />
+        <div className="absolute inset-0 bg-linear-to-br from-emerald-600 via-emerald-800 to-black" />
         {/* Mesh overlays */}
         <div className="absolute inset-0">
           <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-white/8 -translate-y-1/3 translate-x-1/3 blur-2xl" />
@@ -120,7 +120,7 @@ export default function DashboardPage() {
                   key={wallet.id}
                   className="rounded-2xl overflow-hidden card-lift cursor-default"
                 >
-                  <div className={`bg-gradient-to-br ${gradient} p-4`}>
+                  <div className={`bg-linear-to-br ${gradient} p-4`}>
                     <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center mb-3">
                       <Icon className="w-4 h-4 text-white" />
                     </div>
@@ -139,7 +139,7 @@ export default function DashboardPage() {
         <Card className="border-0 shadow-sm card-lift">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-sm">
+              <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-sm">
                 <ArrowUpRight className="w-5 h-5 text-white" />
               </div>
               <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-500/15 dark:text-emerald-400 px-2 py-0.5 rounded-full">+income</span>
@@ -152,7 +152,7 @@ export default function DashboardPage() {
         <Card className="border-0 shadow-sm card-lift">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-400 to-red-500 flex items-center justify-center shadow-sm">
+              <div className="w-10 h-10 rounded-2xl bg-linear-to-br from-rose-400 to-red-500 flex items-center justify-center shadow-sm">
                 <ArrowDownRight className="w-5 h-5 text-white" />
               </div>
               <span className="text-[10px] font-semibold text-rose-600 bg-rose-50 dark:bg-rose-500/15 dark:text-rose-400 px-2 py-0.5 rounded-full">-spent</span>
@@ -165,7 +165,7 @@ export default function DashboardPage() {
         <Card className={`border-0 shadow-sm card-lift ${budgetsOverLimit > 0 ? 'ring-1 ring-destructive/30' : ''}`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm ${budgetsOverLimit > 0 ? 'bg-gradient-to-br from-red-400 to-orange-500' : 'bg-gradient-to-br from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700'}`}>
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm ${budgetsOverLimit > 0 ? 'bg-linear-to-br from-red-400 to-orange-500' : 'bg-linear-to-br from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700'}`}>
                 <AlertTriangle className="w-5 h-5 text-white" />
               </div>
               {budgetsOverLimit > 0 && (
@@ -180,7 +180,7 @@ export default function DashboardPage() {
         <Card className={`border-0 shadow-sm card-lift ${budgetsWarning > 0 ? 'ring-1 ring-yellow-400/40' : ''}`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm ${budgetsWarning > 0 ? 'bg-gradient-to-br from-yellow-400 to-amber-500' : 'bg-gradient-to-br from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700'}`}>
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm ${budgetsWarning > 0 ? 'bg-linear-to-br from-yellow-400 to-amber-500' : 'bg-linear-to-br from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700'}`}>
                 <Target className="w-5 h-5 text-white" />
               </div>
               {budgetsWarning > 0 && (
@@ -198,7 +198,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 gap-3">
           {totalSavings > 0 && (
             <Link href="/savings">
-              <div className="rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-4 text-white card-lift">
+              <div className="rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 p-4 text-white card-lift">
                 <div className="flex items-center gap-2 mb-2">
                   <PiggyBank className="w-4 h-4 text-white/80" />
                   <p className="text-white/80 text-[10px] font-semibold uppercase tracking-wider">Savings</p>
@@ -209,7 +209,7 @@ export default function DashboardPage() {
           )}
           {totalMonthlySubscriptions > 0 && (
             <Link href="/bills">
-              <div className="rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 p-4 text-white card-lift">
+              <div className="rounded-2xl bg-linear-to-br from-violet-500 to-purple-600 p-4 text-white card-lift">
                 <div className="flex items-center gap-2 mb-2">
                   <Receipt className="w-4 h-4 text-white/80" />
                   <p className="text-white/80 text-[10px] font-semibold uppercase tracking-wider">Monthly Subs</p>
@@ -220,7 +220,7 @@ export default function DashboardPage() {
           )}
           {totalBNPLDebt > 0 && (
             <Link href="/bills">
-              <div className="rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 p-4 text-white card-lift">
+              <div className="rounded-2xl bg-linear-to-br from-rose-500 to-red-600 p-4 text-white card-lift">
                 <div className="flex items-center gap-2 mb-2">
                   <CreditCard className="w-4 h-4 text-white/80" />
                   <p className="text-white/80 text-[10px] font-semibold uppercase tracking-wider">BNPL Debt</p>
@@ -262,10 +262,10 @@ export default function DashboardPage() {
                   <div
                     className={`h-full rounded-full transition-all duration-700 ${
                       status.percentage > 100
-                        ? 'bg-gradient-to-r from-red-500 to-orange-500'
+                        ? 'bg-linear-to-r from-red-500 to-orange-500'
                         : status.percentage > 80
-                          ? 'bg-gradient-to-r from-yellow-400 to-amber-500'
-                          : 'bg-gradient-to-r from-accent to-emerald-400'
+                          ? 'bg-linear-to-r from-yellow-400 to-amber-500'
+                          : 'bg-linear-to-r from-accent to-emerald-400'
                     }`}
                     style={{ width: `${Math.min(status.percentage, 100)}%` }}
                   />
@@ -296,7 +296,7 @@ export default function DashboardPage() {
           ].map(({ href, icon: Icon, label, gradient }) => (
             <Link key={href} href={href}>
               <div className="flex flex-col items-center gap-2.5 p-4 rounded-2xl bg-card border-0 shadow-sm hover:shadow-md card-lift text-center cursor-pointer">
-                <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-sm`}>
+                <div className={`w-11 h-11 rounded-2xl bg-linear-to-br ${gradient} flex items-center justify-center shadow-sm`}>
                   <Icon className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-xs font-semibold leading-tight">{label}</span>

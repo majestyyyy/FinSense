@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useFinance } from '@/lib/context/FinanceContext';
 import { BudgetReallocateDialog } from '@/components/BudgetReallocateDialog';
+import { CategoryIcon } from '@/components/CategoryIcon';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Lightbulb, TrendingDown, CheckCircle2, Target, AlertTriangle, X } from 'lucide-react';
 
@@ -46,7 +47,7 @@ export default function BudgetsPage() {
             <h1 className="text-2xl font-extrabold tracking-tight">Budgets</h1>
             <p className="text-muted-foreground text-sm mt-0.5">{monthName}</p>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-emerald-700 flex items-center justify-center shadow-md glow-primary">
+          <div className="w-11 h-11 rounded-2xl bg-linear-to-br from-primary to-emerald-700 flex items-center justify-center shadow-md glow-primary">
             <Target className="w-5 h-5 text-white" />
           </div>
         </div>
@@ -55,17 +56,17 @@ export default function BudgetsPage() {
       <div className="px-4 md:px-8 space-y-4 max-w-2xl mx-auto animate-fade-up">
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-2">
-          <div className="rounded-2xl bg-gradient-to-br from-emerald-500/15 to-teal-500/5 border border-emerald-500/20 p-3 text-center">
+          <div className="rounded-2xl bg-linear-to-br from-emerald-500/15 to-teal-500/5 border border-emerald-500/20 p-3 text-center">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mx-auto mb-1" />
             <p className="text-xl font-extrabold text-emerald-700 dark:text-emerald-400">{onTrackCount}</p>
             <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mt-0.5">On Track</p>
           </div>
-          <div className={`rounded-2xl border p-3 text-center ${warnCount > 0 ? 'bg-gradient-to-br from-amber-500/15 to-orange-500/5 border-amber-500/20' : 'bg-muted/30 border-border/30'}`}>
+          <div className={`rounded-2xl border p-3 text-center ${warnCount > 0 ? 'bg-linear-to-br from-amber-500/15 to-orange-500/5 border-amber-500/20' : 'bg-muted/30 border-border/30'}`}>
             <AlertTriangle className={`w-4 h-4 mx-auto mb-1 ${warnCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground/40'}`} />
             <p className={`text-xl font-extrabold ${warnCount > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}`}>{warnCount}</p>
             <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mt-0.5">Warning</p>
           </div>
-          <div className={`rounded-2xl border p-3 text-center ${overBudgetCount > 0 ? 'bg-gradient-to-br from-destructive/15 to-red-500/5 border-destructive/20' : 'bg-muted/30 border-border/30'}`}>
+          <div className={`rounded-2xl border p-3 text-center ${overBudgetCount > 0 ? 'bg-linear-to-br from-destructive/15 to-red-500/5 border-destructive/20' : 'bg-muted/30 border-border/30'}`}>
             <TrendingDown className={`w-4 h-4 mx-auto mb-1 ${overBudgetCount > 0 ? 'text-destructive' : 'text-muted-foreground/40'}`} />
             <p className={`text-xl font-extrabold ${overBudgetCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>{overBudgetCount}</p>
             <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mt-0.5">Over</p>
@@ -83,7 +84,7 @@ export default function BudgetsPage() {
             </div>
             <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all duration-700 ${overallPct > 100 ? 'bg-gradient-to-r from-red-500 to-orange-500' : overallPct > 80 ? 'bg-gradient-to-r from-yellow-400 to-amber-500' : 'bg-gradient-to-r from-primary to-emerald-400'}`}
+                className={`h-full rounded-full transition-all duration-700 ${overallPct > 100 ? 'bg-linear-to-r from-red-500 to-orange-500' : overallPct > 80 ? 'bg-linear-to-r from-yellow-400 to-amber-500' : 'bg-linear-to-r from-primary to-emerald-400'}`}
                 style={{ width: `${Math.min(overallPct, 100)}%` }}
               />
             </div>
@@ -101,8 +102,8 @@ export default function BudgetsPage() {
         {/* Reallocation suggestion */}
         {suggestion && (
           <div className="rounded-2xl overflow-hidden border border-amber-400/30">
-            <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-400" />
-            <div className="bg-gradient-to-br from-amber-50/80 to-orange-50/60 dark:from-amber-500/10 dark:to-orange-500/5 p-4 flex items-start gap-3">
+            <div className="h-1 bg-linear-to-r from-amber-400 to-orange-400" />
+            <div className="bg-linear-to-br from-amber-50/80 to-orange-50/60 dark:from-amber-500/10 dark:to-orange-500/5 p-4 flex items-start gap-3">
               <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center shrink-0">
                 <Lightbulb className="w-5 h-5 text-amber-600 dark:text-amber-400" />
               </div>
@@ -145,16 +146,13 @@ export default function BudgetsPage() {
               <div key={category.id} className={`rounded-2xl bg-card border overflow-hidden transition-all ${statusKey === 'over' ? 'border-destructive/30 shadow-sm shadow-destructive/10' : statusKey === 'warn' ? 'border-amber-400/30' : 'border-border/40'}`}>
                 <div className="h-1.5 bg-muted overflow-hidden">
                   {hasStatus && (
-                    <div className={`h-full bg-gradient-to-r ${barGradient} transition-all duration-700`} style={{ width: `${Math.min(pct, 100)}%` }} />
+                    <div className={`h-full bg-linear-to-r ${barGradient} transition-all duration-700`} style={{ width: `${Math.min(pct, 100)}%` }} />
                   )}
                 </div>
 
                 <div className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 ${!hasStatus ? 'bg-muted/50' : statusKey === 'over' ? 'bg-destructive/10' : statusKey === 'warn' ? 'bg-amber-100 dark:bg-amber-500/10' : 'bg-primary/10'}`}>
-                      {category.icon}
-                    </div>
-
+                    <CategoryIcon icon={category.icon} color={category.color} size="lg" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-sm">{category.name}</p>
@@ -196,7 +194,7 @@ export default function BudgetsPage() {
                           className="h-10 border-0 bg-transparent p-0 focus-visible:ring-0 text-sm font-semibold"
                         />
                       </div>
-                      <button onClick={() => handleSetBudget(category.id)} className="px-4 h-10 rounded-xl bg-gradient-to-r from-primary to-emerald-700 text-white text-sm font-semibold shadow-sm">
+                      <button onClick={() => handleSetBudget(category.id)} className="px-4 h-10 rounded-xl bg-linear-to-r from-primary to-emerald-700 text-white text-sm font-semibold shadow-sm">
                         Save
                       </button>
                       <button onClick={() => { setEditingCategory(undefined); setNewLimits({ ...newLimits, [category.id]: '' }); }} className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground">
@@ -222,7 +220,7 @@ export default function BudgetsPage() {
         </div>
 
         {/* Budget tips */}
-        <div className="rounded-2xl bg-gradient-to-br from-primary/5 to-emerald-500/5 border border-primary/15 p-4">
+        <div className="rounded-2xl bg-linear-to-br from-primary/5 to-emerald-500/5 border border-primary/15 p-4">
           <p className="text-sm font-bold text-primary mb-3">Budget Tips</p>
           <div className="space-y-2.5">
             {[

@@ -141,7 +141,7 @@ export default function OnboardingPage() {
       <div className="relative w-full max-w-lg space-y-6 animate-fade-up">
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-600 to-black shadow-xl glow-primary mb-1">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-linear-to-br from-emerald-600 to-black shadow-xl glow-primary mb-1">
             <TrendingUp className="w-8 h-8 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold">
@@ -174,7 +174,7 @@ export default function OnboardingPage() {
 
         {/* Add wallet form */}
         <div className="rounded-2xl border border-border/40 bg-card/90 backdrop-blur-sm shadow-lg overflow-hidden">
-          <div className={`h-1 bg-gradient-to-r ${activeMeta.gradient}`} />
+          <div className={`h-1 bg-linear-to-r ${activeMeta.gradient}`} />
           <div className="p-5 space-y-3">
             <div className="flex items-center gap-2 mb-1">
               <div className={`w-7 h-7 rounded-xl flex items-center justify-center ${activeMeta.iconBg}`}>
@@ -258,7 +258,7 @@ export default function OnboardingPage() {
             })}
 
             {/* Total */}
-            <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-linear-to-r from-primary/10 to-accent/10 border border-primary/20">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-primary" />
                 <span className="text-sm font-semibold">Total Balance</span>
@@ -274,7 +274,7 @@ export default function OnboardingPage() {
         <div className="space-y-2 pt-1">
           <Button
             onClick={handleFinish}
-            className="w-full h-12 gap-2 bg-gradient-to-r from-emerald-600 to-black shadow-lg shadow-primary/25 text-base font-semibold rounded-xl"
+            className="w-full h-12 gap-2 bg-linear-to-r from-emerald-600 to-black shadow-lg shadow-primary/25 text-base font-semibold rounded-xl"
             disabled={entries.length === 0}
           >
             Start Tracking

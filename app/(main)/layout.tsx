@@ -27,15 +27,32 @@ export default function MainLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isLoggedIn, user, setUser } = useFinance();
+  const { isLoggedIn, user, setUser, isHydrated } = useFinance();
 
   useEffect(() => {
+    // Wait for hydration before checking auth
+    if (!isHydrated) return;
+
     if (!isLoggedIn) {
       router.push('/login');
     } else if (isLoggedIn && user && !user.setupComplete) {
       router.push('/onboarding');
     }
-  }, [isLoggedIn, user, router]);
+  }, [isHydrated, isLoggedIn, user, router]);
+
+  // Show loading screen while checking session
+  if (!isHydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-linear-to-br from-primary to-primary/60 flex items-center justify-center animate-pulse">
+            <TrendingUp className="w-6 h-6 text-primary-foreground" />
+          </div>
+          <p className="text-muted-foreground text-sm">Loading your finances...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isLoggedIn || !user?.setupComplete) {
     return null;
@@ -51,7 +68,7 @@ export default function MainLayout({
       <aside className="hidden md:flex fixed inset-y-0 left-0 z-50 w-60 flex-col border-r border-border/50 bg-card backdrop-blur-xl dark:bg-[oklch(0.09_0.012_150)]">
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-5 border-b border-border/40">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-md glow-primary shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-linear-to-br from-primary to-primary/60 flex items-center justify-center shadow-md glow-primary shrink-0">
             <TrendingUp className="w-4.5 h-4.5 text-primary-foreground" />
           </div>
           <div>
@@ -86,7 +103,7 @@ export default function MainLayout({
         {/* User section */}
         <div className="border-t border-border/40 p-3">
           <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-muted/50 transition-colors group">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-[11px] font-bold text-white shadow-sm shrink-0">
+            <div className="w-8 h-8 rounded-full bg-linear-to-br from-primary to-accent flex items-center justify-center text-[11px] font-bold text-white shadow-sm shrink-0">
               {initials}
             </div>
             <div className="flex-1 min-w-0">

@@ -22,6 +22,7 @@ interface FinanceContextType {
   user: User | null;
   setUser: (user: User | null) => void;
   isLoggedIn: boolean;
+  isHydrated: boolean;
 
   // Wallets
   wallets: Wallet[];
@@ -319,26 +320,9 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
     };
 
-    const loadFromSupabase = async () => {
+    const loadDataForUser = async (userId: string) => {
       try {
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase?.auth.getSession() ?? { data: { session: null }, error: null };
-
-        if (sessionError) {
-          console.error('Supabase session error:', sessionError);
-          return;
-        }
-
-        if (!session || !session.user || !session.user.id) {
-          console.log('Supabase session missing, continuing with local storage mode.');
-          return;
-        }
-
-        const authUser = session.user;
-
-        const profile = await supabaseHelpers.getUser(authUser.id).catch((e) => {
+        const profile = await supabaseHelpers.getUser(userId).catch((e) => {
           console.warn('Supabase getUser fallback for profile:', e);
           return null;
         });
@@ -352,11 +336,10 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
             createdAt: profile.created_at ? new Date(profile.created_at) : new Date(),
           });
         } else {
-          // If no profile row yet, still set user from auth session so app doesn't lose state
           setUser({
-            id: authUser.id,
-            email: authUser.email ?? '',
-            name: authUser.user_metadata?.name ?? '',
+            id: userId,
+            email: '',
+            name: '',
             setupComplete: false,
             createdAt: new Date(),
           });
@@ -364,14 +347,14 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
 
         const [loadedWallets, loadedTransactions, loadedBudgets, loadedChatMessages, loadedAlerts, loadedSubscriptions, loadedBNPLAccounts, loadedSavingsAccounts] =
           await Promise.all([
-            supabaseHelpers.getWallets(authUser.id).catch(() => []),
-            supabaseHelpers.getTransactions(authUser.id).catch(() => []),
-            supabaseHelpers.getBudgets(authUser.id).catch(() => []),
-            supabaseHelpers.getChatMessages(authUser.id).catch(() => []),
-            supabaseHelpers.getAlerts(authUser.id).catch(() => []),
-            supabaseHelpers.getSubscriptions(authUser.id).catch(() => []),
-            supabaseHelpers.getBNPLAccounts(authUser.id).catch(() => []),
-            supabaseHelpers.getSavingsAccounts(authUser.id).catch(() => []),
+            supabaseHelpers.getWallets(userId).catch(() => []),
+            supabaseHelpers.getTransactions(userId).catch(() => []),
+            supabaseHelpers.getBudgets(userId).catch(() => []),
+            supabaseHelpers.getChatMessages(userId).catch(() => []),
+            supabaseHelpers.getAlerts(userId).catch(() => []),
+            supabaseHelpers.getSubscriptions(userId).catch(() => []),
+            supabaseHelpers.getBNPLAccounts(userId).catch(() => []),
+            supabaseHelpers.getSavingsAccounts(userId).catch(() => []),
           ]);
 
         setWallets(loadedWallets.map(mapWallet));
@@ -383,14 +366,35 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
         setBNPLAccounts(loadedBNPLAccounts.map(mapBNPLAccount));
         setSavingsAccounts(loadedSavingsAccounts.map(mapSavingsAccount));
       } catch (error) {
-        console.error('Supabase load error:', error);
-      } finally {
-        setIsHydrated(true);
+        console.error('Data load error:', error);
       }
     };
 
     loadFromStorage();
-    loadFromSupabase();
+
+    // Listen to auth state changes - this will fire on initial mount with current session
+    if (supabase) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session?.user?.id) {
+          await loadDataForUser(session.user.id);
+        } else {
+          setUser(null);
+          setWallets([]);
+          setTransactions([]);
+          setBudgets([]);
+          setChatMessages([]);
+          setAlerts([]);
+          setSubscriptions([]);
+          setBNPLAccounts([]);
+          setSavingsAccounts([]);
+        }
+        setIsHydrated(true);
+      });
+
+      return () => subscription?.unsubscribe();
+    } else {
+      setIsHydrated(true);
+    }
   }, []);
 
   // Save user to localStorage
@@ -1061,6 +1065,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     user,
     setUser,
     isLoggedIn: !!user,
+    isHydrated,
     wallets,
     addWallet,
     updateWallet,

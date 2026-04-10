@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useFinance } from '@/lib/context/FinanceContext';
 import { TransactionForm } from '@/components/TransactionForm';
+import { CategoryIcon } from '@/components/CategoryIcon';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Edit2, Search, SlidersHorizontal, Receipt, ArrowUpRight, ArrowDownRight, TrendingUp, X } from 'lucide-react';
 import {
@@ -85,7 +86,7 @@ export default function TransactionsPage() {
             </div>
             <button
               onClick={() => { setEditingId(undefined); setIsFormOpen(true); }}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-emerald-700 text-white text-sm font-semibold shadow-md shadow-primary/25"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-linear-to-r from-primary to-emerald-700 text-white text-sm font-semibold shadow-md shadow-primary/25"
             >
               <Plus className="w-4 h-4" /> Add
             </button>
@@ -120,7 +121,7 @@ export default function TransactionsPage() {
       <div className="px-4 md:px-8 pt-4 space-y-4 max-w-2xl mx-auto animate-fade-up">
         {/* Summary cards */}
         <div className="grid grid-cols-3 gap-2">
-          <div className="rounded-2xl bg-gradient-to-br from-emerald-500/15 to-teal-500/10 border border-emerald-500/20 p-3">
+          <div className="rounded-2xl bg-linear-to-br from-emerald-500/15 to-teal-500/10 border border-emerald-500/20 p-3">
             <div className="flex items-center gap-1 mb-1">
               <ArrowUpRight className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
               <p className="text-[9px] text-emerald-700 dark:text-emerald-400 font-bold uppercase tracking-wider">Income</p>
@@ -129,7 +130,7 @@ export default function TransactionsPage() {
               &#8369;{totalIncome.toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </p>
           </div>
-          <div className="rounded-2xl bg-gradient-to-br from-rose-500/15 to-red-500/10 border border-rose-500/20 p-3">
+          <div className="rounded-2xl bg-linear-to-br from-rose-500/15 to-red-500/10 border border-rose-500/20 p-3">
             <div className="flex items-center gap-1 mb-1">
               <ArrowDownRight className="w-3 h-3 text-rose-600 dark:text-rose-400" />
               <p className="text-[9px] text-rose-700 dark:text-rose-400 font-bold uppercase tracking-wider">Expenses</p>
@@ -138,7 +139,7 @@ export default function TransactionsPage() {
               &#8369;{totalExpense.toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </p>
           </div>
-          <div className={`rounded-2xl p-3 border ${net >= 0 ? 'bg-gradient-to-br from-primary/15 to-emerald-500/10 border-primary/20' : 'bg-gradient-to-br from-orange-500/15 to-red-500/10 border-orange-500/20'}`}>
+          <div className={`rounded-2xl p-3 border ${net >= 0 ? 'bg-linear-to-br from-primary/15 to-emerald-500/10 border-primary/20' : 'bg-linear-to-br from-orange-500/15 to-red-500/10 border-orange-500/20'}`}>
             <div className="flex items-center gap-1 mb-1">
               <TrendingUp className="w-3 h-3 text-muted-foreground" />
               <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider">Net</p>
@@ -179,10 +180,10 @@ export default function TransactionsPage() {
                 <button
                   key={c.id}
                   onClick={() => setFilterCategory(filterCategory === c.id ? '' : c.id)}
-                  className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border text-xs font-semibold transition-all ${filterCategory === c.id ? 'border-primary bg-primary/10 text-primary' : 'border-border/50 bg-muted/30 text-muted-foreground hover:border-primary/30'}`}
+                  className={`flex flex-col items-center gap-2 p-2.5 rounded-xl border transition-all ${filterCategory === c.id ? 'border-primary bg-primary/10' : 'border-border/50 bg-muted/30 hover:border-primary/30'}`}
                 >
-                  <span className="text-lg leading-none">{c.icon}</span>
-                  <span className="text-[10px] leading-tight text-center">{c.name.split(' ')[0]}</span>
+                  <CategoryIcon icon={c.icon} color={c.color} size="sm" />
+                  <span className={`text-[10px] leading-tight text-center font-semibold ${filterCategory === c.id ? 'text-primary' : 'text-muted-foreground'}`}>{c.name.split(' ')[0]}</span>
                 </button>
               ))}
             </div>
@@ -192,7 +193,7 @@ export default function TransactionsPage() {
         {/* Empty state */}
         {filteredTransactions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+            <div className="w-20 h-20 rounded-3xl bg-linear-to-br from-muted to-muted/50 flex items-center justify-center">
               <Receipt className="w-9 h-9 text-muted-foreground/40" />
             </div>
             <div>
@@ -224,11 +225,11 @@ export default function TransactionsPage() {
 
                   {/* Cards */}
                   <div className="space-y-2">
-                    {txns.map((transaction) => (
+                    {txns.map((transaction) => {
+                      const category = categories.find((c) => c.id === transaction.category);
+                      return (
                       <div key={transaction.id} className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-card border border-border/30 hover:border-border/60 hover:shadow-sm transition-all group">
-                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 ${transaction.type === 'income' ? 'bg-emerald-500/10' : 'bg-rose-500/10'}`}>
-                          {getCategoryIcon(transaction.category)}
-                        </div>
+                        <CategoryIcon icon={category?.icon || '💰'} color={category?.color || '#DFE6E9'} size="md" />
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-sm truncate">{transaction.description}</p>
                           <div className="flex items-center gap-2 mt-0.5">
@@ -250,7 +251,8 @@ export default function TransactionsPage() {
                           </div>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               );

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useFinance } from '@/lib/context/FinanceContext';
+import { CategoryIcon } from '@/components/CategoryIcon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -71,8 +72,8 @@ export function BudgetReallocateDialog({
             {/* From */}
             <div className="space-y-2">
               <label className="text-sm font-medium">From</label>
-              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                <span className="text-2xl">{fromCategory?.icon}</span>
+              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                <CategoryIcon icon={fromCategory?.icon || '💰'} color={fromCategory?.color || '#DFE6E9'} size="lg" />
                 <div>
                   <p className="font-semibold">{fromCategory?.name}</p>
                   <p className="text-xs text-muted-foreground">Available to move</p>
@@ -88,8 +89,8 @@ export function BudgetReallocateDialog({
             {/* To */}
             <div className="space-y-2">
               <label className="text-sm font-medium">To</label>
-              <div className="flex items-center gap-2 p-3 bg-destructive/10 rounded-lg border border-destructive/20">
-                <span className="text-2xl">{toCategory?.icon}</span>
+              <div className="flex items-center gap-3 p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+                <CategoryIcon icon={toCategory?.icon || '💰'} color={toCategory?.color || '#DFE6E9'} size="lg" />
                 <div>
                   <p className="font-semibold">{toCategory?.name}</p>
                   <p className="text-xs text-destructive">Over budget</p>
