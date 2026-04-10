@@ -8,7 +8,8 @@ import { BottomNav } from '@/components/BottomNav';
 import { AlertBanner } from '@/components/AlertBanner';
 import { InstallPrompt } from '@/components/InstallPrompt';
 import { FloatingChat } from '@/components/FloatingChat';
-import { TrendingUp, Home, CreditCard, Target, Settings, LogOut, Receipt, PiggyBank } from 'lucide-react';
+import { TrendingUp, Home, CreditCard, Target, Settings, LogOut, Receipt, PiggyBank, Moon, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -28,6 +29,7 @@ export default function MainLayout({
   const router = useRouter();
   const pathname = usePathname();
   const { isLoggedIn, user, setUser, isHydrated } = useFinance();
+  const { resolvedTheme, setTheme } = useTheme();
 
   useEffect(() => {
     // Wait for hydration before checking auth
@@ -98,6 +100,15 @@ export default function MainLayout({
               </Link>
             );
           })}
+
+          {/* Theme Toggle */}
+          <button
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 text-muted-foreground hover:text-foreground hover:bg-muted/60 mt-2"
+          >
+            {resolvedTheme === 'dark' ? <Sun className="w-4.5 h-4.5 shrink-0" /> : <Moon className="w-4.5 h-4.5 shrink-0" />}
+            {resolvedTheme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+          </button>
         </nav>
 
         {/* User section */}
@@ -115,11 +126,15 @@ export default function MainLayout({
                 try {
                   const { supabase } = await import('@/lib/supabase');
                   if (supabase) {
-                    await supabase.auth.signOut();
+                    const { error } = await supabase.auth.signOut();
+                    if (error) console.warn('Supabase signOut error:', error);
                   }
                 } catch (err) {
                   console.warn('Error signing out:', err);
                 } finally {
+                  // Always clear local state and redirect, even if signOut fails
+                  localStorage.clear();
+                  sessionStorage.clear();
                   setUser(null);
                   router.push('/login');
                 }

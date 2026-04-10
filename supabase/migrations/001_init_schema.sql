@@ -47,15 +47,15 @@ CREATE TABLE IF NOT EXISTS public.categories (
 
 -- Insert default categories
 INSERT INTO public.categories (id, name, icon, color) VALUES
-  ('food', 'Food & Dining', '🍔', '#FF6B6B'),
-  ('transport', 'Transport', '🚗', '#4ECDC4'),
-  ('entertainment', 'Entertainment', '🎮', '#95E1D3'),
-  ('education', 'Education', '📚', '#6C5CE7'),
-  ('utilities', 'Utilities', '💡', '#00B894'),
-  ('health', 'Health & Fitness', '⚕️', '#FF7675'),
-  ('shopping', 'Shopping', '🛍️', '#A29BFE'),
-  ('savings', 'Savings', '🏦', '#FDCB6E'),
-  ('other', 'Other', '📌', '#DFE6E9')
+  ('food', 'Food & Dining', '', '#FF6B6B'),
+  ('transport', 'Transport', '', '#4ECDC4'),
+  ('entertainment', 'Entertainment', '', '#95E1D3'),
+  ('education', 'Education', '', '#6C5CE7'),
+  ('utilities', 'Utilities', '', '#00B894'),
+  ('health', 'Health & Fitness', '', '#FF7675'),
+  ('shopping', 'Shopping', '', '#A29BFE'),
+  ('savings', 'Savings', '', '#FDCB6E'),
+  ('other', 'Other', '', '#DFE6E9')
 ON CONFLICT (id) DO NOTHING;
 
 -- Budgets table

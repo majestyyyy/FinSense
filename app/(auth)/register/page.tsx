@@ -150,7 +150,7 @@ export default function RegisterPage() {
 
             {error && (
               <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium">
-                <span>⚠</span> {error}
+                {error}
               </div>
             )}
 
@@ -194,7 +194,7 @@ export default function RegisterPage() {
         </div>
         <div className="relative space-y-5">
           <h1 className="text-4xl font-extrabold text-white leading-tight tracking-tight">
-            Start your financial<br />journey today 🚀
+            Start your financial<br />journey today
           </h1>
           <p className="text-white/70 text-base leading-relaxed">
             Join thousands of Filipino students who are taking control of their money with FinSense.

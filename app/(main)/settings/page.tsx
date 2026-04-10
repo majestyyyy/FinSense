@@ -41,12 +41,21 @@ export default function SettingsPage() {
   const userWallets = wallets.filter((w) => w.userId === user?.id);
 
   const handleLogout = async () => {
-    const supabase = (await import('@/lib/supabase')).supabase;
-    if (supabase) {
-      await supabase.auth.signOut().catch((err) => console.warn('Supabase signOut error:', err));
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      if (supabase) {
+        const { error } = await supabase.auth.signOut();
+        if (error) console.warn('Supabase signOut error:', error);
+      }
+    } catch (err) {
+      console.warn('Error signing out:', err);
+    } finally {
+      // Always clear local state and redirect, even if signOut fails
+      localStorage.clear();
+      sessionStorage.clear();
+      setUser(null);
+      router.push('/login');
     }
-    setUser(null);
-    router.push('/login');
   };
 
   const handleClearData = () => {
@@ -161,28 +170,6 @@ export default function SettingsPage() {
               </div>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* Appearance */}
-      <div className="rounded-2xl border border-border/40 bg-card overflow-hidden max-w-4xl mx-auto w-full">
-        <div className="px-4 py-3 border-b border-border/30"><p className="text-sm font-bold">Appearance</p></div>
-        <div className="p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
-              {resolvedTheme === 'dark' ? <Moon className="w-4 h-4 text-primary"/> : <Sun className="w-4 h-4 text-primary"/>}
-            </div>
-            <div>
-              <p className="text-sm font-semibold">{resolvedTheme === 'dark' ? 'Dark Mode' : 'Light Mode'}</p>
-              <p className="text-xs text-muted-foreground">Tap to toggle theme</p>
-            </div>
-          </div>
-          <button
-            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-            className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${resolvedTheme === 'dark' ? 'bg-primary' : 'bg-muted-foreground/30'}`}
-          >
-            <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-all duration-300 ${resolvedTheme === 'dark' ? 'left-6' : 'left-0.5'}`}/>
-          </button>
         </div>
       </div>
 

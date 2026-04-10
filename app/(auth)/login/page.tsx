@@ -88,7 +88,7 @@ export default function LoginPage() {
         <div className="relative space-y-6">
           <div>
             <h1 className="text-4xl font-extrabold text-white leading-tight tracking-tight">
-              Take control of<br />your finances 💸
+              Take control of<br />your finances
             </h1>
             <p className="mt-3 text-white/70 text-base leading-relaxed">
               The smart way for Filipino students to track, budget, and grow their money.
@@ -161,7 +161,7 @@ export default function LoginPage() {
 
             {error && (
               <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium">
-                <span>⚠</span> {error}
+                {error}
               </div>
             )}
 

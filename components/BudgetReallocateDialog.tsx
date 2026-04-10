@@ -73,7 +73,7 @@ export function BudgetReallocateDialog({
             <div className="space-y-2">
               <label className="text-sm font-medium">From</label>
               <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                <CategoryIcon icon={fromCategory?.icon || '💰'} color={fromCategory?.color || '#DFE6E9'} size="lg" />
+                <CategoryIcon icon={fromCategory?.icon} color={fromCategory?.color || '#DFE6E9'} size="lg" />
                 <div>
                   <p className="font-semibold">{fromCategory?.name}</p>
                   <p className="text-xs text-muted-foreground">Available to move</p>
@@ -90,7 +90,7 @@ export function BudgetReallocateDialog({
             <div className="space-y-2">
               <label className="text-sm font-medium">To</label>
               <div className="flex items-center gap-3 p-3 bg-destructive/10 rounded-lg border border-destructive/20">
-                <CategoryIcon icon={toCategory?.icon || '💰'} color={toCategory?.color || '#DFE6E9'} size="lg" />
+                <CategoryIcon icon={toCategory?.icon} color={toCategory?.color || '#DFE6E9'} size="lg" />
                 <div>
                   <p className="font-semibold">{toCategory?.name}</p>
                   <p className="text-xs text-destructive">Over budget</p>

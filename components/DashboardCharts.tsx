@@ -19,11 +19,54 @@ import { useFinance } from '@/lib/context/FinanceContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useMemo } from 'react';
 import { format, subDays } from 'date-fns';
+import { useTheme } from 'next-themes';
 
 const COLORS = ['#10b981', '#ef4444', '#8b5cf6', '#f59e0b', '#ec4899', '#06b6d4'];
 
+// Custom tooltips that adapt to theme
+function CustomTooltip({ active, payload, label, theme }: any) {
+  if (!active || !payload || !payload.length) return null;
+
+  const isDark = theme === 'dark';
+  const bgColor = isDark ? 'bg-slate-900/95' : 'bg-white/95';
+  const textColor = isDark ? 'text-slate-50' : 'text-slate-900';
+  const borderColor = isDark ? 'border-slate-700' : 'border-slate-200';
+  const labelColor = isDark ? 'text-slate-400' : 'text-slate-600';
+
+  return (
+    <div className={`${bgColor} ${borderColor} border rounded-lg px-3 py-2 shadow-xl backdrop-blur-sm`}>
+      {label && <p className={`${labelColor} text-xs font-medium mb-1`}>{label}</p>}
+      {payload.map((entry: any, i: number) => (
+        <p key={i} className={`${textColor} text-sm font-semibold`} style={{ color: entry.color }}>
+          {entry.name}: ₱{parseFloat(entry.value).toFixed(2)}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function CategoryTooltip({ active, payload, theme }: any) {
+  if (!active || !payload || !payload.length) return null;
+
+  const isDark = theme === 'dark';
+  const bgColor = isDark ? 'bg-slate-900/95' : 'bg-white/95';
+  const textColor = isDark ? 'text-slate-50' : 'text-slate-900';
+  const borderColor = isDark ? 'border-slate-700' : 'border-slate-200';
+
+  return (
+    <div className={`${bgColor} ${borderColor} border rounded-lg px-3 py-2 shadow-xl backdrop-blur-sm`}>
+      <p className={`${textColor} text-sm font-semibold`} style={{ color: payload[0].fill }}>
+        {payload[0].name}
+      </p>
+      <p className={`${textColor} text-sm font-bold`}>₱{parseFloat(payload[0].value).toFixed(2)}</p>
+    </div>
+  );
+}
+
+
 export function CategoryBreakdownChart() {
   const { financialSummary, categories } = useFinance();
+  const { resolvedTheme } = useTheme();
 
   const data = useMemo(() => {
     return Object.entries(financialSummary.categoryBreakdown).map(([categoryId, amount]) => {
@@ -71,7 +114,7 @@ export function CategoryBreakdownChart() {
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip formatter={(value) => `₱${value.toFixed(2)}`} />
+            <Tooltip content={<CategoryTooltip theme={resolvedTheme} />} />
           </PieChart>
         </ResponsiveContainer>
       </CardContent>
@@ -81,6 +124,7 @@ export function CategoryBreakdownChart() {
 
 export function SpendingTrendsChart() {
   const { transactions, user } = useFinance();
+  const { resolvedTheme } = useTheme();
 
   const data = useMemo(() => {
     const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -123,13 +167,14 @@ export function SpendingTrendsChart() {
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
             <YAxis />
-            <Tooltip formatter={(value) => `₱${value.toFixed(2)}`} />
+            <Tooltip content={<CustomTooltip theme={resolvedTheme} />} />
             <Line
               type="monotone"
               dataKey="amount"
               stroke="hsl(var(--primary))"
               strokeWidth={2}
               dot={{ fill: 'hsl(var(--primary))', r: 4 }}
+              name="Spending"
             />
           </LineChart>
         </ResponsiveContainer>
@@ -140,6 +185,7 @@ export function SpendingTrendsChart() {
 
 export function IncomeVsExpensesChart() {
   const { transactions, user } = useFinance();
+  const { resolvedTheme } = useTheme();
 
   const data = useMemo(() => {
     const last30Days = Array.from({ length: 4 }, (_, i) => {
@@ -197,7 +243,7 @@ export function IncomeVsExpensesChart() {
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" />
             <YAxis />
-            <Tooltip formatter={(value) => `₱${value.toFixed(2)}`} />
+            <Tooltip content={<CustomTooltip theme={resolvedTheme} />} />
             <Legend />
             <Bar dataKey="income" fill="#10b981" />
             <Bar dataKey="expenses" fill="#ef4444" />

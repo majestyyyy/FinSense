@@ -70,7 +70,7 @@ export default function TransactionsPage() {
   const handleEdit = (id: string) => { setEditingId(id); setIsFormOpen(true); };
   const handleDelete = (id: string) => { deleteTransaction(id); setDeleteId(undefined); };
   const getCategoryName = (id: string) => categories.find((c) => c.id === id)?.name || id;
-  const getCategoryIcon = (id: string) => categories.find((c) => c.id === id)?.icon || '💰';
+  const getCategoryIcon = (id: string) => categories.find((c) => c.id === id)?.icon || '';
   const activeFilterCount = [filterCategory, filterType !== 'all'].filter(Boolean).length;
   const dayTotal = (txns: any[]) => txns.reduce((sum, t) => sum + (t.type === 'income' ? t.amount : -t.amount), 0);
 
@@ -229,7 +229,7 @@ export default function TransactionsPage() {
                       const category = categories.find((c) => c.id === transaction.category);
                       return (
                       <div key={transaction.id} className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-card border border-border/30 hover:border-border/60 hover:shadow-sm transition-all group">
-                        <CategoryIcon icon={category?.icon || '💰'} color={category?.color || '#DFE6E9'} size="md" />
+                        <CategoryIcon icon={category?.icon} color={category?.color || '#DFE6E9'} size="md" />
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-sm truncate">{transaction.description}</p>
                           <div className="flex items-center gap-2 mt-0.5">

@@ -42,7 +42,7 @@ Keep responses concise (under 200 words). Use bullet points when listing tips. B
     const errMsg = error instanceof Error ? error.message : String(error);
     if (errMsg.includes('429') || errMsg.includes('quota') || errMsg.includes('RESOURCE_EXHAUSTED')) {
       return {
-        message: `⚠️ **AI quota exceeded.** The Gemini API free-tier limit has been reached for this key.\n\nTo fix this:\n• Go to [Google AI Studio](https://aistudio.google.com) and generate a new API key\n• Or enable billing on your Google Cloud project\n\nIn the meantime, here are quick tips:\n• Save at least 20% of your income\n• Track every transaction, big or small\n• Review your budgets weekly`,
+        message: `**AI quota exceeded.** The Gemini API free-tier limit has been reached for this key.\n\nTo fix this:\n• Go to [Google AI Studio](https://aistudio.google.com) and generate a new API key\n• Or enable billing on your Google Cloud project\n\nIn the meantime, here are quick tips:\n• Save at least 20% of your income\n• Track every transaction, big or small\n• Review your budgets weekly`,
       };
     }
 

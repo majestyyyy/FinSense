@@ -145,7 +145,7 @@ export default function OnboardingPage() {
             <TrendingUp className="w-8 h-8 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold">
-            Hi {user?.name?.split(' ')[0]} 👋 Let&apos;s get started!
+            Hi {user?.name?.split(' ')[0]}! Let&apos;s get started!
           </h1>
           <p className="text-muted-foreground text-sm max-w-xs mx-auto">
             Tell us how much money you currently have. This becomes your starting balance.
