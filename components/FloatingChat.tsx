@@ -65,8 +65,8 @@ export function FloatingChat() {
           'fixed z-[60] flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-2xl shadow-primary/30 transition-all duration-300',
           'bg-gradient-to-br from-primary to-emerald-700 text-primary-foreground',
           'hover:scale-110 active:scale-95',
-          /* Position: bottom-right */
-          'bottom-4 right-4 sm:bottom-6 sm:right-6'
+          /* Position: higher on mobile to avoid BottomNav, normal on desktop */
+          'bottom-24 sm:bottom-6 right-4 sm:right-6'
         )}
         aria-label="Open AI Advisor"
       >
@@ -82,10 +82,10 @@ export function FloatingChat() {
         className={cn(
           'fixed z-50 flex flex-col transition-all duration-300 origin-bottom-right',
           'bg-card border border-border/50 shadow-2xl shadow-black/20 dark:shadow-black/60 rounded-2xl overflow-hidden',
-          /* Mobile: full-width panel at bottom */
-          'left-2 right-2 sm:left-3 sm:right-3 bottom-[calc(60px+env(safe-area-inset-bottom,0px))] max-h-[60vh]',
-          /* Tablet: full-width */
-          'md:left-3 md:right-3 md:bottom-20 md:max-h-[65vh]',
+          /* Mobile: full-width panel, positioned above BottomNav */
+          'left-2 right-2 sm:left-3 sm:right-3 bottom-[calc(104px+env(safe-area-inset-bottom,0px))] max-h-[50vh]',
+          /* Tablet and up: adjust bottom position */
+          'sm:bottom-24 md:bottom-20 md:max-h-[65vh]',
           /* Desktop: positioned at bottom-right with responsive sizing */
           'lg:left-auto lg:w-[min(400px,90vw)] lg:right-6 lg:bottom-20 lg:max-h-[70vh]',
           open ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
