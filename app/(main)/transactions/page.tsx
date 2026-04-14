@@ -243,13 +243,15 @@ export default function TransactionsPage() {
                     {txns.map((transaction) => {
                       const category = categories.find((c) => c.id === transaction.category);
                       return (
-                      <div key={transaction.id} className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-card border border-border/30 hover:border-border/60 hover:shadow-sm transition-all group">
-                        <CategoryIcon icon={category?.icon} color={category?.color || '#DFE6E9'} size="md" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm truncate">{transaction.description}</p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{getCategoryName(transaction.category)}</p>
+                      <div key={transaction.id} className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3.5 rounded-2xl bg-card border border-border/30 hover:border-border/60 hover:shadow-sm transition-all group">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <CategoryIcon icon={category?.icon} color={category?.color || '#DFE6E9'} size="md" />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm truncate">{transaction.description}</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{getCategoryName(transaction.category)}</p>
+                          </div>
                         </div>
-                        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3 shrink-0 ml-2">
+                        <div className="flex items-center gap-3 shrink-0">
                           <span className={`font-extrabold text-sm tabular-nums whitespace-nowrap ${transaction.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                             {transaction.type === 'income' ? '+' : '-'}&#8369;{transaction.amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                           </span>

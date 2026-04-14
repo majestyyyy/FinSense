@@ -53,12 +53,24 @@ export function AlertBanner() {
         info: <Info className="w-4 h-4" />,
       };
 
-      const toastFn = toast[alert.severity as 'info' | 'warning' | 'error'] || toast.info;
-      toastFn(alert.title, {
-        description: alert.message,
-        icon: iconMap[alert.severity],
-        duration: 5000,
-      });
+      // Use proper toast function based on severity
+      const severity = alert.severity as 'info' | 'warning' | 'error';
+      if (severity === 'warning') {
+        toast.warning(alert.title, {
+          description: alert.message,
+          duration: 5000,
+        });
+      } else if (severity === 'error') {
+        toast.error(alert.title, {
+          description: alert.message,
+          duration: 5000,
+        });
+      } else {
+        toast.info(alert.title, {
+          description: alert.message,
+          duration: 5000,
+        });
+      }
 
       // Automatically dismiss the alert after showing it
       dismissAlert(alert.id);
