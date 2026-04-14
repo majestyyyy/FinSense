@@ -31,6 +31,7 @@ export interface Transaction {
   category: string;
   description: string;
   date: Date;
+  walletId?: string; // Which wallet this transaction affects
   createdAt: Date;
 }
 

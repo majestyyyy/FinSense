@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback, useRef } from 'react';
 import {
   User,
   Transaction,
@@ -118,6 +118,7 @@ const mapTransaction = (row: any): Transaction => ({
   category: row.category,
   description: row.description ?? '',
   date: new Date(row.date ?? row.date),
+  walletId: row.wallet_id,
   createdAt: new Date(row.created_at ?? row.createdAt),
 });
 
@@ -345,32 +346,45 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
           });
         }
 
-        const [loadedWallets, loadedTransactions, loadedBudgets, loadedChatMessages, loadedAlerts, loadedSubscriptions, loadedBNPLAccounts, loadedSavingsAccounts] =
-          await Promise.all([
-            supabaseHelpers.getWallets(userId).catch(() => []),
-            supabaseHelpers.getTransactions(userId).catch(() => []),
-            supabaseHelpers.getBudgets(userId).catch(() => []),
-            supabaseHelpers.getChatMessages(userId).catch(() => []),
-            supabaseHelpers.getAlerts(userId).catch(() => []),
-            supabaseHelpers.getSubscriptions(userId).catch(() => []),
-            supabaseHelpers.getBNPLAccounts(userId).catch(() => []),
-            supabaseHelpers.getSavingsAccounts(userId).catch(() => []),
-          ]);
+        // Load critical data first (wallets, transactions, budgets) in parallel
+        const [loadedWallets, loadedTransactions, loadedBudgets] = await Promise.all([
+          supabaseHelpers.getWallets(userId).catch(() => []),
+          supabaseHelpers.getTransactions(userId).catch(() => []),
+          supabaseHelpers.getBudgets(userId).catch(() => []),
+        ]);
 
         setWallets(loadedWallets.map(mapWallet));
         setTransactions(loadedTransactions.map(mapTransaction));
         setBudgets(loadedBudgets.map(mapBudget));
-        setChatMessages(loadedChatMessages.map(mapChatMessage));
-        setAlerts(loadedAlerts.map(mapAlert));
-        setSubscriptions(loadedSubscriptions.map(mapSubscription));
-        setBNPLAccounts(loadedBNPLAccounts.map(mapBNPLAccount));
-        setSavingsAccounts(loadedSavingsAccounts.map(mapSavingsAccount));
+
+        // Load non-critical data in background (alerts, chat, subscriptions, BNPL, savings)
+        // These don't block the main UI
+        Promise.all([
+          supabaseHelpers.getChatMessages(userId).catch(() => []),
+          supabaseHelpers.getAlerts(userId).catch(() => []),
+          supabaseHelpers.getSubscriptions(userId).catch(() => []),
+          supabaseHelpers.getBNPLAccounts(userId).catch(() => []),
+          supabaseHelpers.getSavingsAccounts(userId).catch(() => []),
+        ])
+          .then(([chatMsgs, alerts, subs, bnplAccts, savingsAccts]) => {
+            setChatMessages(chatMsgs.map(mapChatMessage));
+            setAlerts(alerts.map(mapAlert));
+            setSubscriptions(subs.map(mapSubscription));
+            setBNPLAccounts(bnplAccts.map(mapBNPLAccount));
+            setSavingsAccounts(savingsAccts.map(mapSavingsAccount));
+          })
+          .catch((error) => {
+            console.error('Error loading non-critical data:', error);
+          });
       } catch (error) {
         console.error('Data load error:', error);
       }
     };
 
     loadFromStorage();
+    // Mark as hydrated immediately after loading cache so UI shows instantly
+    // Supabase data will update in background
+    setIsHydrated(true);
 
     // Listen to auth state changes - this will fire on initial mount with current session
     if (supabase) {
@@ -388,12 +402,9 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
           setBNPLAccounts([]);
           setSavingsAccounts([]);
         }
-        setIsHydrated(true);
       });
 
       return () => subscription?.unsubscribe();
-    } else {
-      setIsHydrated(true);
     }
   }, []);
 
@@ -424,61 +435,28 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [user, isHydrated]);
 
-  // Save wallets to localStorage
+  // Debounce localStorage writes to batch operations instead of individual writes
+  const localStorageTimeoutRef = useRef<NodeJS.Timeout>();
   useEffect(() => {
-    if (isHydrated) {
+    if (!isHydrated) return;
+
+    // Clear previous timeout
+    if (localStorageTimeoutRef.current) clearTimeout(localStorageTimeoutRef.current);
+
+    // Batch write after 800ms of inactivity
+    localStorageTimeoutRef.current = setTimeout(() => {
       localStorage.setItem(STORAGE_KEY_WALLETS, JSON.stringify(wallets));
-    }
-  }, [wallets, isHydrated]);
-
-  // Save transactions to localStorage
-  useEffect(() => {
-    if (isHydrated) {
       localStorage.setItem(STORAGE_KEY_TRANSACTIONS, JSON.stringify(transactions));
-    }
-  }, [transactions, isHydrated]);
-
-  // Save budgets to localStorage
-  useEffect(() => {
-    if (isHydrated) {
       localStorage.setItem(STORAGE_KEY_BUDGETS, JSON.stringify(budgets));
-    }
-  }, [budgets, isHydrated]);
-
-  // Save chat messages to localStorage
-  useEffect(() => {
-    if (isHydrated) {
-      localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(chatMessages));
-    }
-  }, [chatMessages, isHydrated]);
-
-  // Save alerts to localStorage
-  useEffect(() => {
-    if (isHydrated) {
-      localStorage.setItem(STORAGE_KEY_ALERTS, JSON.stringify(alerts));
-    }
-  }, [alerts, isHydrated]);
-
-  // Save subscriptions to localStorage
-  useEffect(() => {
-    if (isHydrated) {
       localStorage.setItem(STORAGE_KEY_SUBSCRIPTIONS, JSON.stringify(subscriptions));
-    }
-  }, [subscriptions, isHydrated]);
-
-  // Save BNPL accounts to localStorage
-  useEffect(() => {
-    if (isHydrated) {
       localStorage.setItem(STORAGE_KEY_BNPL, JSON.stringify(bnplAccounts));
-    }
-  }, [bnplAccounts, isHydrated]);
-
-  // Save savings accounts to localStorage
-  useEffect(() => {
-    if (isHydrated) {
       localStorage.setItem(STORAGE_KEY_SAVINGS, JSON.stringify(savingsAccounts));
-    }
-  }, [savingsAccounts, isHydrated]);
+    }, 800);
+
+    return () => {
+      if (localStorageTimeoutRef.current) clearTimeout(localStorageTimeoutRef.current);
+    };
+  }, [wallets, transactions, budgets, subscriptions, bnplAccounts, savingsAccounts, isHydrated]);
 
   // Wallet operations
   const addWallet = async (wallet: Omit<Wallet, 'id' | 'userId' | 'createdAt'>) => {
@@ -570,12 +548,30 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
         createdAt: new Date(),
       };
       setTransactions((prev) => [...prev, fallbackTransaction]);
+
+      // Update wallet balance locally
+      if (transaction.walletId) {
+        const amount = transaction.type === 'income' ? transaction.amount : -transaction.amount;
+        setWallets((prev) =>
+          prev.map((w) =>
+            w.id === transaction.walletId ? { ...w, balance: w.balance + amount } : w
+          )
+        );
+      }
       return;
     }
 
     try {
       const newTransaction = await supabaseHelpers.addTransaction(activeUserId, transaction);
       setTransactions((prev) => [...prev, mapTransaction(newTransaction)]);
+
+      // Update wallet balance
+      if (transaction.walletId) {
+        const amount = transaction.type === 'income' ? transaction.amount : -transaction.amount;
+        await updateWallet(transaction.walletId, {
+          balance: wallets.find((w) => w.id === transaction.walletId)!.balance + amount,
+        });
+      }
       return;
     } catch (error) {
       console.error('Supabase addTransaction error:', error);
@@ -588,12 +584,52 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       createdAt: new Date(),
     };
     setTransactions((prev) => [...prev, fallbackTransaction]);
+
+    // Update wallet balance locally
+    if (transaction.walletId) {
+      const amount = transaction.type === 'income' ? transaction.amount : -transaction.amount;
+      setWallets((prev) =>
+        prev.map((w) =>
+          w.id === transaction.walletId ? { ...w, balance: w.balance + amount } : w
+        )
+      );
+    }
   };
 
   const updateTransaction = async (id: string, updates: Partial<Transaction>) => {
+    const oldTransaction = transactions.find((t) => t.id === id);
+    if (!oldTransaction) return;
+
     try {
       const updated = await supabaseHelpers.updateTransaction(id, updates);
       setTransactions((prev) => prev.map((t) => (t.id === id ? mapTransaction(updated) : t)));
+
+      // Handle wallet balance updates
+      // Reverse old transaction
+      if (oldTransaction.walletId) {
+        const reverseAmount = oldTransaction.type === 'income' ? -oldTransaction.amount : oldTransaction.amount;
+        const oldWallet = wallets.find((w) => w.id === oldTransaction.walletId);
+        if (oldWallet) {
+          await updateWallet(oldTransaction.walletId, {
+            balance: oldWallet.balance + reverseAmount,
+          });
+        }
+      }
+
+      // Apply new transaction
+      const newWalletId = updates.walletId || oldTransaction.walletId;
+      const newType = updates.type || oldTransaction.type;
+      const newAmount = updates.amount ?? oldTransaction.amount;
+
+      if (newWalletId) {
+        const newWallet = wallets.find((w) => w.id === newWalletId);
+        if (newWallet) {
+          const applyAmount = newType === 'income' ? newAmount : -newAmount;
+          await updateWallet(newWalletId, {
+            balance: newWallet.balance + applyAmount,
+          });
+        }
+      }
       return;
     } catch (error) {
       console.error('Supabase updateTransaction error:', error);
@@ -602,13 +638,37 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const deleteTransaction = async (id: string) => {
+    const transaction = transactions.find((t) => t.id === id);
+    if (!transaction) return;
+
     try {
       await supabaseHelpers.deleteTransaction(id);
       setTransactions((prev) => prev.filter((t) => t.id !== id));
+
+      // Reverse wallet balance
+      if (transaction.walletId) {
+        const reverseAmount = transaction.type === 'income' ? -transaction.amount : transaction.amount;
+        const wallet = wallets.find((w) => w.id === transaction.walletId);
+        if (wallet) {
+          await updateWallet(transaction.walletId, {
+            balance: wallet.balance + reverseAmount,
+          });
+        }
+      }
       return;
     } catch (error) {
       console.error('Supabase deleteTransaction error:', error);
       setTransactions((prev) => prev.filter((t) => t.id !== id));
+
+      // Still reverse wallet balance locally on error
+      if (transaction.walletId) {
+        const reverseAmount = transaction.type === 'income' ? -transaction.amount : transaction.amount;
+        setWallets((prev) =>
+          prev.map((w) =>
+            w.id === transaction.walletId ? { ...w, balance: w.balance + reverseAmount } : w
+          )
+        );
+      }
     }
   };
 
@@ -770,18 +830,23 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
-  // Total wallet balance
-  const totalWalletBalance = wallets
-    .filter((w) => w.userId === user?.id)
-    .reduce((sum, w) => sum + w.balance, 0);
+  // Memoize wallet balance calculation
+  const totalWalletBalance = useMemo(
+    () =>
+      wallets
+        .filter((w) => w.userId === user?.id)
+        .reduce((sum, w) => sum + w.balance, 0),
+    [wallets, user?.id]
+  );
 
-  // Calculate financial summary — balance starts from wallet balances
-  const calculateFinancialSummary = (): FinancialSummary => {
-    const userTransactions = transactions.filter((t) => t.userId === user?.id);
-    const currentMonth = new Date().toISOString().slice(0, 7);
-    const monthTransactions = userTransactions.filter(
-      (t) => t.date.toISOString().slice(0, 7) === currentMonth
-    );
+  // Calculate financial summary — memoized to prevent expensive recalculations
+  const calculateFinancialSummary = useMemo(() => {
+    return (): FinancialSummary => {
+      const userTransactions = transactions.filter((t) => t.userId === user?.id);
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const monthTransactions = userTransactions.filter(
+        (t) => t.date.toISOString().slice(0, 7) === currentMonth
+      );
 
     const totalIncome = monthTransactions
       .filter((t) => t.type === 'income')
@@ -821,15 +886,162 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       };
     });
 
-    return {
-      totalIncome,
-      totalExpenses,
-      // True balance = initial wallets + all-time income - all-time expenses
-      balance: totalWalletBalance + allTimeIncome - allTimeExpenses,
-      categoryBreakdown,
-      budgetStatus,
+      return {
+        totalIncome,
+        totalExpenses,
+        // True balance = initial wallets + all-time income - all-time expenses
+        balance: totalWalletBalance + allTimeIncome - allTimeExpenses,
+        categoryBreakdown,
+        budgetStatus,
+      };
     };
-  };
+  }, [transactions, user?.id, totalWalletBalance, budgets]);
+
+  // Debounce alert checks to prevent feedback loops
+  const alertTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastAlertCheckRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!isHydrated || !user) return;
+
+    // Define the function first, before using it
+    const checkAndCreateAlerts = async () => {
+      const today = new Date();
+      const currentMonth = today.toISOString().slice(0, 7);
+      const todayTime = today.getTime();
+
+      // Build alert index for O(1) lookups instead of O(n) array searches
+      const alertIndex = new Set<string>();
+      alerts.forEach((a) => {
+        if (a.userId === user.id) {
+          if (a.type === 'budget_exceeded' || a.type === 'upcoming_payment') {
+            alertIndex.add(`${a.type}:${a.category}`);
+          } else {
+            alertIndex.add(`${a.type}:${a.message.substring(0, 20)}`);
+          }
+        }
+      });
+
+      const monthTransactions = transactions.filter(
+        (t) => t.userId === user.id && t.date.toISOString().slice(0, 7) === currentMonth && t.type === 'expense'
+      );
+
+      // Check budgets for alerts
+      const monthBudgets = budgets.filter((b) => b.userId === user.id && b.month === currentMonth);
+      for (const budget of monthBudgets) {
+        const spent = monthTransactions
+          .filter((t) => t.category === budget.category)
+          .reduce((sum, t) => sum + t.amount, 0);
+        const percentage = (spent / budget.monthlyLimit) * 100;
+
+        const alertType = percentage > 100 ? 'budget_exceeded' : 'upcoming_payment';
+        const key = `${alertType}:${budget.category}`;
+
+        if (percentage > 100 && !alertIndex.has(key)) {
+          await addAlert({
+            type: 'budget_exceeded',
+            title: 'Budget Exceeded',
+            message: `Your ${budget.category} budget has been exceeded by ₱${(spent - budget.monthlyLimit).toFixed(2)}`,
+            category: budget.category,
+            severity: 'error',
+            read: false,
+          });
+        } else if (percentage >= 80 && percentage <= 100 && !alertIndex.has(key)) {
+          await addAlert({
+            type: 'upcoming_payment',
+            title: 'Budget Warning',
+            message: `Your ${budget.category} budget is ${percentage.toFixed(0)}% spent (₱${spent.toFixed(2)} of ₱${budget.monthlyLimit.toFixed(2)})`,
+            category: budget.category,
+            severity: 'warning',
+            read: false,
+          });
+        }
+      }
+
+      // Check subscriptions due
+      const activeSubs = subscriptions.filter((s) => s.userId === user.id && s.isActive);
+      for (const sub of activeSubs) {
+        const dueDate = new Date(sub.nextBillingDate);
+        const daysUntil = Math.floor((dueDate.getTime() - todayTime) / (1000 * 60 * 60 * 24));
+        const key = `subscription_due:${sub.name}`;
+
+        if (daysUntil <= 3 && daysUntil >= 0 && !alertIndex.has(key)) {
+          await addAlert({
+            type: 'subscription_due',
+            title: 'Subscription Due Soon',
+            message: `${sub.name} is due in ${daysUntil} day${daysUntil !== 1 ? 's' : ''} (₱${sub.amount.toFixed(2)})`,
+            severity: daysUntil === 0 ? 'error' : 'warning',
+            read: false,
+          });
+        } else if (daysUntil < 0 && !alertIndex.has(`${key}_overdue`)) {
+          await addAlert({
+            type: 'subscription_due',
+            title: 'Subscription Overdue',
+            message: `${sub.name} was due ${Math.abs(daysUntil)} day${Math.abs(daysUntil) !== 1 ? 's' : ''} ago`,
+            severity: 'error',
+            read: false,
+          });
+        }
+      }
+
+      // Check BNPL due dates
+      const activeBNPL = bnplAccounts.filter((b) => b.userId === user.id && b.isActive);
+      for (const bnpl of activeBNPL) {
+        const dueDate = new Date(bnpl.dueDate);
+        const daysUntil = Math.floor((dueDate.getTime() - todayTime) / (1000 * 60 * 60 * 24));
+        const key = `bnpl_due:${bnpl.name}`;
+
+        if (daysUntil <= 5 && daysUntil >= 0 && !alertIndex.has(key)) {
+          await addAlert({
+            type: 'bnpl_due',
+            title: 'BNPL Payment Due',
+            message: `${bnpl.name} payment due in ${daysUntil} day${daysUntil !== 1 ? 's' : ''} (₱${bnpl.usedCredit.toFixed(2)})`,
+            severity: daysUntil <= 2 ? 'error' : 'warning',
+            read: false,
+          });
+        } else if (daysUntil < 0 && !alertIndex.has(`${key}_overdue`)) {
+          await addAlert({
+            type: 'bnpl_due',
+            title: 'BNPL Payment Overdue',
+            message: `${bnpl.name} was due ${Math.abs(daysUntil)} day${Math.abs(daysUntil) !== 1 ? 's' : ''} ago`,
+            severity: 'error',
+            read: false,
+          });
+        }
+      }
+
+      // Check for low balance
+      const walletBalance = wallets
+        .filter((w) => w.userId === user.id)
+        .reduce((sum, w) => sum + w.balance, 0);
+      if (walletBalance < 500 && walletBalance > 0 && !alertIndex.has('low_balance')) {
+        await addAlert({
+          type: 'low_balance',
+          title: 'Low Balance Warning',
+          message: `Your total balance is only ₱${walletBalance.toFixed(2)}. Consider topping up.`,
+          severity: 'warning',
+          read: false,
+        });
+      }
+    };
+
+    // Clear previous timeout
+    if (alertTimeoutRef.current) clearTimeout(alertTimeoutRef.current);
+
+    const now = Date.now();
+    // Only check alerts max once per minute to reduce CPU usage
+    if (now - lastAlertCheckRef.current < 60000) {
+      alertTimeoutRef.current = setTimeout(() => {
+        lastAlertCheckRef.current = Date.now();
+        checkAndCreateAlerts();
+      }, 2000);
+      return;
+    }
+
+    lastAlertCheckRef.current = now;
+
+    checkAndCreateAlerts();
+  }, [isHydrated, user, transactions, budgets, subscriptions, bnplAccounts, wallets, alerts]);
 
   // Suggest reallocation
   const suggestReallocation = (): ReallocationSuggestion | null => {
@@ -936,15 +1148,20 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
-  const totalMonthlySubscriptions = subscriptions
-    .filter((s) => s.isActive && s.userId === user?.id)
-    .reduce((sum, s) => {
-      if (s.billingCycle === 'monthly') return sum + s.amount;
-      if (s.billingCycle === 'yearly') return sum + s.amount / 12;
-      if (s.billingCycle === 'quarterly') return sum + s.amount / 3;
-      if (s.billingCycle === 'weekly') return sum + s.amount * 4.33;
-      return sum;
-    }, 0);
+  // Memoize subscription totals
+  const totalMonthlySubscriptions = useMemo(
+    () =>
+      subscriptions
+        .filter((s) => s.isActive && s.userId === user?.id)
+        .reduce((sum, s) => {
+          if (s.billingCycle === 'monthly') return sum + s.amount;
+          if (s.billingCycle === 'yearly') return sum + s.amount / 12;
+          if (s.billingCycle === 'quarterly') return sum + s.amount / 3;
+          if (s.billingCycle === 'weekly') return sum + s.amount * 4.33;
+          return sum;
+        }, 0),
+    [subscriptions, user?.id]
+  );
 
   // BNPL operations
   const addBNPLAccount = async (account: Omit<BNPLAccount, 'id' | 'userId' | 'createdAt'>) => {
@@ -989,11 +1206,29 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
-  const totalBNPLDebt = bnplAccounts
-    .filter((b) => b.isActive && b.userId === user?.id)
-    .reduce((sum, b) => sum + b.usedCredit, 0);
+  // Memoize BNPL debt calculation
+  const totalBNPLDebt = useMemo(
+    () =>
+      bnplAccounts
+        .filter((b) => b.isActive && b.userId === user?.id)
+        .reduce((sum, b) => sum + b.usedCredit, 0),
+    [bnplAccounts, user?.id]
+  );
 
-  // ── Daily interest accrual ────────────────────────────────────────────────
+  // Save chat and alerts separately (less frequent updates)
+  useEffect(() => {
+    if (isHydrated) {
+      localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(chatMessages));
+    }
+  }, [chatMessages, isHydrated]);
+
+  useEffect(() => {
+    if (isHydrated && alerts.length > 0) {
+      // Keep only recent 50 alerts to prevent localStorage bloat
+      const recentAlerts = alerts.slice(-50);
+      localStorage.setItem(STORAGE_KEY_ALERTS, JSON.stringify(recentAlerts));
+    }
+  }, [alerts, isHydrated]);
   // Runs once on hydration: applies outstanding daily compounding interest
   useEffect(() => {
     if (!isHydrated || savingsAccounts.length === 0) return;
@@ -1057,9 +1292,14 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
-  const totalSavings = savingsAccounts
-    .filter((a) => a.userId === user?.id)
-    .reduce((sum, a) => sum + a.balance, 0);
+  // Memoize savings total calculation
+  const totalSavings = useMemo(
+    () =>
+      savingsAccounts
+        .filter((a) => a.userId === user?.id)
+        .reduce((sum, a) => sum + a.balance, 0),
+    [savingsAccounts, user?.id]
+  );
 
   const value: FinanceContextType = {
     user,

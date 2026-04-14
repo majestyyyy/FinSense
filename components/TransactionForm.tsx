@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useFinance } from '@/lib/context/FinanceContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,34 +16,59 @@ interface TransactionFormProps {
 }
 
 export function TransactionForm({ isOpen, onClose, editingId }: TransactionFormProps) {
-  const { addTransaction, updateTransaction, transactions, categories } = useFinance();
+  const { addTransaction, updateTransaction, transactions, categories, wallets, user } = useFinance();
   const [type, setType] = useState<TransactionType>('expense');
   const [category, setCategory] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [walletId, setWalletId] = useState('');
   const [error, setError] = useState('');
+
+  // Get user's wallets - memoized to prevent useEffect triggering on every render
+  const userWallets = useMemo(
+    () => wallets.filter((w) => w.userId === user?.id),
+    [wallets, user?.id]
+  );
 
   // Load editing data if provided
   const editingTransaction = editingId
     ? transactions.find((t) => t.id === editingId)
     : null;
 
-  if (editingTransaction && !category) {
-    setType(editingTransaction.type);
-    setCategory(editingTransaction.category);
-    setAmount(editingTransaction.amount.toString());
-    setDescription(editingTransaction.description);
-    setDate(editingTransaction.date.toISOString().split('T')[0]);
-  }
+  // Initialize form state when editing transaction
+  useEffect(() => {
+    if (editingTransaction) {
+      setType(editingTransaction.type);
+      setCategory(editingTransaction.category);
+      setAmount(editingTransaction.amount.toString());
+      setDescription(editingTransaction.description);
+      setDate(editingTransaction.date.toISOString().split('T')[0]);
+      setWalletId(editingTransaction.walletId || '');
+    } else {
+      // Reset form when dialog opens for new transaction
+      setType('expense');
+      setCategory('');
+      setAmount('');
+      setDescription('');
+      setDate(new Date().toISOString().split('T')[0]);
+      setWalletId(userWallets[0]?.id || '');
+      setError('');
+    }
+  }, [editingTransaction, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Validate
-    if (!category || !amount || !description) {
+    // Validate - category only required for expenses
+    if (!amount || !description || !walletId) {
       setError('Please fill in all fields');
+      return;
+    }
+
+    if (type === 'expense' && !category) {
+      setError('Please select a category');
       return;
     }
 
@@ -53,21 +78,26 @@ export function TransactionForm({ isOpen, onClose, editingId }: TransactionFormP
       return;
     }
 
+    // For income, auto-set category to 'income'
+    const transactionCategory = type === 'income' ? 'income' : category;
+
     if (editingTransaction) {
       updateTransaction(editingTransaction.id, {
         type,
-        category,
+        category: transactionCategory,
         amount: numAmount,
         description,
         date: new Date(date),
+        walletId,
       });
     } else {
       addTransaction({
         type,
-        category,
+        category: transactionCategory,
         amount: numAmount,
         description,
         date: new Date(date),
+        walletId,
       });
     }
 
@@ -77,6 +107,7 @@ export function TransactionForm({ isOpen, onClose, editingId }: TransactionFormP
     setAmount('');
     setDescription('');
     setDate(new Date().toISOString().split('T')[0]);
+    setWalletId(userWallets[0]?.id || '');
     onClose();
   };
 
@@ -86,12 +117,19 @@ export function TransactionForm({ isOpen, onClose, editingId }: TransactionFormP
     setAmount('');
     setDescription('');
     setDate(new Date().toISOString().split('T')[0]);
+    setWalletId(userWallets[0]?.id || '');
     setError('');
     onClose();
   };
 
+  const handleDialogChange = (open: boolean) => {
+    if (!open) {
+      handleClose();
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={handleDialogChange}>
       <DialogContent className="w-full max-w-md">
         <DialogHeader>
           <DialogTitle>{editingTransaction ? 'Edit Transaction' : 'Add Transaction'}</DialogTitle>
@@ -126,25 +164,43 @@ export function TransactionForm({ isOpen, onClose, editingId }: TransactionFormP
             </button>
           </div>
 
-          {/* Category */}
+          {/* Category - only show for expenses */}
+          {type === 'expense' && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
+              >
+                <option value="">Select a category</option>
+                {categories
+                  .filter((c) => c.id !== 'savings' && c.id !== 'income')
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.icon} {c.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          )}
+
+          {/* Wallet Selection */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Category</label>
+            <label className="text-sm font-medium">
+              {type === 'income' ? 'Receive to' : 'Deduct from'} Wallet
+            </label>
             <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              value={walletId}
+              onChange={(e) => setWalletId(e.target.value)}
               className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
             >
-              <option value="">Select a category</option>
-              {categories
-                .filter((c) => {
-                  if (type === 'income') return c.id === 'savings';
-                  return c.id !== 'savings';
-                })
-                .map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.icon} {c.name}
-                  </option>
-                ))}
+              <option value="">Select a wallet</option>
+              {userWallets.map((wallet) => (
+                <option key={wallet.id} value={wallet.id}>
+                  {wallet.name} (₱{wallet.balance.toFixed(2)})
+                </option>
+              ))}
             </select>
           </div>
 

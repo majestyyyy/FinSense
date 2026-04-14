@@ -11,7 +11,6 @@ import {
   TrendingUp,
   Banknote,
   Building2,
-  Smartphone,
   CreditCard,
   Plus,
   Trash2,
@@ -51,15 +50,6 @@ const WALLET_TYPES: {
     examples: 'BDO, BPI, Metrobank…',
     gradient: 'from-blue-500 to-blue-600',
     iconBg: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
-  },
-  {
-    type: 'ewallet',
-    label: 'E-Wallet',
-    icon: Smartphone,
-    placeholder: 'e.g. GCash',
-    examples: 'GCash, Maya, ShopeePay…',
-    gradient: 'from-emerald-500 to-teal-600',
-    iconBg: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400',
   },
   {
     type: 'digital_bank',
@@ -110,21 +100,41 @@ export default function OnboardingPage() {
     setEntries((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleFinish = () => {
-    entries.forEach((e) => {
-      addWallet({
-        type: e.type,
-        name: e.name,
-        balance: parseFloat(e.balance) || 0,
-      });
-    });
-    completeSetup();
-    router.push('/dashboard');
+  const handleFinish = async () => {
+    try {
+      // Save all wallets first, wait for completion
+      await Promise.all(
+        entries.map((e) =>
+          addWallet({
+            type: e.type,
+            name: e.name,
+            balance: parseFloat(e.balance) || 0,
+          })
+        )
+      );
+      // Then mark setup complete
+      await completeSetup();
+      // Finally navigate
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Onboarding error:', error);
+      // Still allow navigation on error after brief delay
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 500);
+    }
   };
 
-  const handleSkip = () => {
-    completeSetup();
-    router.push('/dashboard');
+  const handleSkip = async () => {
+    try {
+      await completeSetup();
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Setup completion error:', error);
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 300);
+    }
   };
 
   const totalBalance = entries.reduce((sum, e) => sum + (parseFloat(e.balance) || 0), 0);
@@ -153,23 +163,25 @@ export default function OnboardingPage() {
         </div>
 
         {/* Wallet type selector */}
-        <div className="grid grid-cols-4 gap-2">
-          {WALLET_TYPES.map(({ type, label, icon: Icon, iconBg, gradient }) => (
-            <button
-              key={type}
-              onClick={() => { setActiveType(type); setNameError(''); setBalanceError(''); }}
-              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center ${
-                activeType === type
-                  ? 'border-primary bg-primary/5 shadow-sm'
-                  : 'border-border bg-card hover:border-primary/40 hover:bg-muted/30'
-              }`}
-            >
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${iconBg}`}>
-                <Icon className="w-5 h-5" />
-              </div>
-              <span className="text-[11px] font-medium leading-tight">{label}</span>
-            </button>
-          ))}
+        <div className="flex justify-center">
+          <div className="grid grid-cols-3 gap-2">
+            {WALLET_TYPES.map(({ type, label, icon: Icon, iconBg, gradient }) => (
+              <button
+                key={type}
+                onClick={() => { setActiveType(type); setNameError(''); setBalanceError(''); }}
+                className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center ${
+                  activeType === type
+                    ? 'border-primary bg-primary/5 shadow-sm'
+                    : 'border-border bg-card hover:border-primary/40 hover:bg-muted/30'
+                }`}
+              >
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${iconBg}`}>
+                  <Icon className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-medium leading-tight">{label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Add wallet form */}

@@ -2,6 +2,7 @@
 
 import { FinanceProvider } from '@/lib/context/FinanceContext';
 import { ThemeProvider } from 'next-themes';
+import { Toaster } from '@/components/ui/sonner';
 
 export default function Providers({
   children,
@@ -12,6 +13,7 @@ export default function Providers({
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <FinanceProvider>
         {children}
+        <Toaster position="top-center" richColors />
       </FinanceProvider>
     </ThemeProvider>
   );

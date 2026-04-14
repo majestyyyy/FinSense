@@ -22,6 +22,62 @@ const walletGradients: Record<WalletType, string> = {
   digital_bank: 'from-rose-500 to-pink-500',
 };
 
+// Bank and E-wallet specific colors
+const bankColors: Record<string, string> = {
+  'gcash': 'from-blue-500 to-blue-600',
+  'maya': 'from-green-500 to-emerald-600',
+  'metrobank': 'from-orange-500 to-amber-600',
+  'gotyme': 'from-cyan-400 to-sky-500',
+  'bpi': 'from-red-500 to-red-600',
+  'bdo': 'from-blue-600 to-blue-700',
+  'rcbc': 'from-blue-500 to-indigo-600',
+  'chinabank': 'from-red-600 to-rose-600',
+  'pnb': 'from-cyan-500 to-teal-600',
+  'unionbank': 'from-purple-500 to-purple-600',
+  'landbank': 'from-yellow-500 to-amber-600',
+  'mbtc': 'from-orange-400 to-yellow-500',
+  'eastwest': 'from-indigo-500 to-purple-600',
+  'security bank': 'from-gray-600 to-slate-700',
+  'rob': 'from-emerald-600 to-teal-700',
+  'banks 888': 'from-blue-400 to-cyan-500',
+  'maybank': 'from-green-600 to-emerald-700',
+  'tonik': 'from-rose-500 to-pink-600',
+  'seabank': 'from-blue-400 to-sky-600',
+  'eon': 'from-green-500 to-teal-600',
+};
+
+const getWalletGradient = (walletType: WalletType, walletName: string): string => {
+  if (walletType === 'cash') {
+    return 'from-emerald-500 to-teal-500';
+  }
+  
+  if (walletType === 'ewallet' || walletType === 'digital_bank') {
+    const nameLower = walletName.toLowerCase();
+    // Check for exact matches
+    for (const [key, gradient] of Object.entries(bankColors)) {
+      if (nameLower.includes(key) || nameLower === key) {
+        return gradient;
+      }
+    }
+    // Default for digital banks/e-wallets
+    return walletType === 'digital_bank' ? 'from-rose-500 to-pink-500' : 'from-emerald-500 to-teal-600';
+  }
+  
+  if (walletType === 'bank') {
+    const nameLower = walletName.toLowerCase();
+    // Check for exact matches
+    for (const [key, gradient] of Object.entries(bankColors)) {
+      if (nameLower.includes(key) || nameLower === key) {
+        return gradient;
+      }
+    }
+    // Default for traditional banks
+    return 'from-cyan-500 to-blue-600';
+  }
+  
+  return 'from-primary to-primary/60';
+};
+
 export default function DashboardPage() {
   const { financialSummary, user, wallets, totalWalletBalance, totalMonthlySubscriptions, totalBNPLDebt, totalSavings } = useFinance();
 
@@ -114,7 +170,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 gap-3">
             {userWallets.map((wallet) => {
               const Icon = walletIcons[wallet.type] ?? CreditCard;
-              const gradient = walletGradients[wallet.type] ?? 'from-primary to-primary/60';
+              const gradient = getWalletGradient(wallet.type, wallet.name);
               return (
                 <div
                   key={wallet.id}

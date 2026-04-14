@@ -80,12 +80,19 @@ export const cleanMarkdown = (text: string): React.ReactNode => {
   });
 };
 
-const suggestions = ['Tell me about budgeting', 'How can I save more?', 'Show my spending'];
+const suggestions = [
+  'How can I save more money?',
+  'Analyze my spending patterns',
+  'What are my biggest expenses?',
+  'Budget tips for students',
+  'When should I increase my savings?',
+  'How do I optimize my wallets?'
+];
 
 
 
 export function ChatBot() {
-  const { chatMessages, addChatMessage, financialSummary, user } = useFinance();
+  const { chatMessages, addChatMessage, financialSummary, user, transactions, budgets, savingsAccounts, subscriptions, wallets } = useFinance();
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -112,6 +119,11 @@ export function ChatBot() {
       const response = await getFinancialAdvice({
         message: userMessage,
         financialData: financialSummary,
+        transactions,
+        budgets,
+        savings: savingsAccounts,
+        subscriptions,
+        wallets,
         userName: user?.name,
       });
 

@@ -9,11 +9,16 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { cleanMarkdown } from './ChatBot';
 
-const suggestions = ['How can I save more?', 'Analyze my spending', 'Budget tips'];
+const suggestions = [
+  'How can I save more?',
+  'Analyze my spending',
+  'Budget optimization',
+  'Financial goals advice'
+];
 
 export function FloatingChat() {
   const [open, setOpen] = useState(false);
-  const { chatMessages, addChatMessage, financialSummary, user } = useFinance();
+  const { chatMessages, addChatMessage, financialSummary, user, transactions, budgets, savingsAccounts, subscriptions, wallets } = useFinance();
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -31,6 +36,11 @@ export function FloatingChat() {
       const response = await getFinancialAdvice({
         message: text.trim(),
         financialData: financialSummary,
+        transactions,
+        budgets,
+        savings: savingsAccounts,
+        subscriptions,
+        wallets,
         userName: user?.name,
       });
       addChatMessage({ role: 'assistant', content: response.message });

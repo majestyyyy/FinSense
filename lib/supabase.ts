@@ -92,7 +92,7 @@ export const supabaseHelpers = {
   },
 
   // Transactions
-  async getTransactions(userId: string, limit = 100) {
+  async getTransactions(userId: string, limit = 300) {
     const { data, error } = await getSupabase()
       .from('transactions')
       .select('*')
@@ -104,9 +104,10 @@ export const supabaseHelpers = {
   },
 
   async addTransaction(userId: string, transaction: any) {
+    const { walletId, ...rest } = transaction;
     const { data, error } = await getSupabase()
       .from('transactions')
-      .insert([{ ...transaction, user_id: userId }])
+      .insert([{ ...rest, wallet_id: walletId, user_id: userId }])
       .select()
       .single();
     if (error) throw error;
@@ -114,9 +115,11 @@ export const supabaseHelpers = {
   },
 
   async updateTransaction(id: string, updates: any) {
+    const { walletId, ...rest } = updates;
+    const dbUpdates = { ...rest, ...(walletId !== undefined && { wallet_id: walletId }) };
     const { data, error } = await getSupabase()
       .from('transactions')
-      .update(updates)
+      .update(dbUpdates)
       .eq('id', id)
       .select()
       .single();

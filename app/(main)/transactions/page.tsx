@@ -108,12 +108,27 @@ export default function TransactionsPage() {
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`relative p-2 rounded-xl transition-colors ${showFilters || activeFilterCount > 0 ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}
+              aria-label="Toggle advanced filters"
             >
               <SlidersHorizontal className="w-4 h-4" />
               {activeFilterCount > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] flex items-center justify-center font-bold">{activeFilterCount}</span>
               )}
             </button>
+            {(searchQuery || activeFilterCount > 0) && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setFilterCategory('');
+                  setFilterType('all');
+                  setShowFilters(false);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-xs font-semibold"
+                title="Clear all filters and search"
+              >
+                Clear
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -232,20 +247,17 @@ export default function TransactionsPage() {
                         <CategoryIcon icon={category?.icon} color={category?.color || '#DFE6E9'} size="md" />
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-sm truncate">{transaction.description}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[11px] text-muted-foreground truncate">{getCategoryName(transaction.category)}</span>
-                            <span className="text-[10px] text-muted-foreground/50">{format(new Date(transaction.date), 'h:mm a')}</span>
-                          </div>
+                          <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{getCategoryName(transaction.category)}</p>
                         </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <span className={`font-extrabold text-sm tabular-nums ${transaction.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3 shrink-0 ml-2">
+                          <span className={`font-extrabold text-sm tabular-nums whitespace-nowrap ${transaction.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                             {transaction.type === 'income' ? '+' : '-'}&#8369;{transaction.amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                           </span>
-                          <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 md:opacity-100 transition-opacity ml-1">
-                            <button onClick={() => handleEdit(transaction.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
+                          <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => handleEdit(transaction.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors" aria-label="Edit transaction">
                               <Edit2 className="w-3 h-3" />
                             </button>
-                            <button onClick={() => setDeleteId(transaction.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+                            <button onClick={() => setDeleteId(transaction.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" aria-label="Delete transaction">
                               <Trash2 className="w-3 h-3" />
                             </button>
                           </div>
@@ -261,7 +273,14 @@ export default function TransactionsPage() {
         )}
       </div>
 
-      <TransactionForm isOpen={isFormOpen} onClose={() => { setIsFormOpen(false); setEditingId(undefined); }} editingId={editingId} />
+      <TransactionForm 
+        isOpen={isFormOpen} 
+        onClose={() => { 
+          setIsFormOpen(false); 
+          setTimeout(() => setEditingId(undefined), 100);
+        }} 
+        editingId={editingId} 
+      />
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(undefined)}>
         <AlertDialogContent className="rounded-2xl">
