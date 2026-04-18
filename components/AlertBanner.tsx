@@ -3,7 +3,6 @@
 import { useFinance } from '@/lib/context/FinanceContext';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { AlertCircle, AlertTriangle, Info } from 'lucide-react';
 
 const STORAGE_KEY = 'finsense_shown_alerts';
 
@@ -30,7 +29,6 @@ function saveProcessedAlerts(alertIds: Set<string>): void {
 export function AlertBanner() {
   const { alerts, dismissAlert } = useFinance();
   const processedAlertsRef = useRef<Set<string>>(getProcessedAlerts());
-  const previousAlertsRef = useRef<string[]>([]);
 
   useEffect(() => {
     // Filter to only unread alerts that haven't been shown yet
@@ -47,37 +45,34 @@ export function AlertBanner() {
       processedAlertsRef.current.add(alert.id);
       saveProcessedAlerts(processedAlertsRef.current);
 
-      const iconMap = {
-        warning: <AlertTriangle className="w-4 h-4" />,
-        error: <AlertCircle className="w-4 h-4" />,
-        info: <Info className="w-4 h-4" />,
-      };
-
       // Use proper toast function based on severity
       const severity = alert.severity as 'info' | 'warning' | 'error';
-      if (severity === 'warning') {
-        toast.warning(alert.title, {
-          description: alert.message,
-          duration: 5000,
-        });
-      } else if (severity === 'error') {
-        toast.error(alert.title, {
-          description: alert.message,
-          duration: 5000,
-        });
-      } else {
-        toast.info(alert.title, {
-          description: alert.message,
-          duration: 5000,
-        });
+      try {
+        if (severity === 'warning') {
+          toast.warning(alert.title, {
+            description: alert.message,
+            duration: 5000,
+          });
+        } else if (severity === 'error') {
+          toast.error(alert.title, {
+            description: alert.message,
+            duration: 5000,
+          });
+        } else {
+          toast.info(alert.title, {
+            description: alert.message,
+            duration: 5000,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to show toast:', error);
       }
 
       // Automatically dismiss the alert after showing it
-      dismissAlert(alert.id);
+      dismissAlert(alert.id).catch((error) => {
+        console.error('Failed to dismiss alert:', error);
+      });
     }
-
-    // Track current alert IDs to detect changes
-    previousAlertsRef.current = alerts.map(a => a.id);
   }, [alerts, dismissAlert]);
 
   return null;

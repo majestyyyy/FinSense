@@ -124,9 +124,10 @@ export default function MainLayout({
             <button
               onClick={async () => {
                 try {
-                  const { supabase } = await import('@/lib/supabase');
-                  if (supabase) {
-                    const { error } = await supabase.auth.signOut();
+                  const supabaseModule = await import('@/lib/supabase');
+                  const supabaseClient = supabaseModule.supabase;
+                  if (supabaseClient) {
+                    const { error } = await supabaseClient.auth.signOut();
                     if (error) console.warn('Supabase signOut error:', error);
                   }
                 } catch (err) {

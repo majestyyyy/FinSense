@@ -4,9 +4,10 @@ import { useRouter } from 'next/navigation';
 import { useFinance } from '@/lib/context/FinanceContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LogOut, Trash2, Download, AlertCircle, User, Mail, Calendar, Banknote, Building2, Smartphone, CreditCard, Plus, Pencil, Check, X, Moon, Sun, Settings as SettingsIcon } from 'lucide-react';
+import { LogOut, Trash2, Download, AlertCircle, User, Mail, Calendar, Banknote, Building2, Smartphone, CreditCard, Plus, Pencil, Check, X, Moon, Sun, Settings as SettingsIcon, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from 'next-themes';
+import { useToast } from '@/hooks/use-toast';
 import { WalletType } from '@/lib/types';
 import {
   AlertDialog,
@@ -28,14 +29,20 @@ const WALLET_METAS: Record<WalletType, { label: string; icon: React.ComponentTyp
 export default function SettingsPage() {
   const router = useRouter();
   const { user, setUser, transactions, budgets, chatMessages, wallets, addWallet, updateWallet, deleteWallet, totalWalletBalance } = useFinance();
+  const { toast } = useToast();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [deleteWalletDialogOpen, setDeleteWalletDialogOpen] = useState(false);
+  const [walletToDelete, setWalletToDelete] = useState<string | null>(null);
   const [editingWalletId, setEditingWalletId] = useState<string | null>(null);
   const [editBalance, setEditBalance] = useState('');
   const [showAddWallet, setShowAddWallet] = useState(false);
   const [newWalletType, setNewWalletType] = useState<WalletType>('cash');
   const [newWalletName, setNewWalletName] = useState('');
   const [newWalletBalance, setNewWalletBalance] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { resolvedTheme, setTheme } = useTheme();
   const userWallets = wallets.filter((w) => w.userId === user?.id);
@@ -77,17 +84,104 @@ export default function SettingsPage() {
     URL.revokeObjectURL(url);
   };
 
-  const handleSaveBalance = (walletId: string) => {
+  const handleSaveBalance = async (walletId: string) => {
     const val = parseFloat(editBalance);
-    if (!isNaN(val) && val >= 0) updateWallet(walletId, { balance: val });
-    setEditingWalletId(null);
-    setEditBalance('');
+    if (isNaN(val) || val < 0) {
+      toast({
+        title: 'Invalid amount',
+        description: 'Please enter a valid positive amount.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      await updateWallet(walletId, { balance: val });
+      toast({
+        title: 'Balance updated',
+        description: `Wallet balance updated to ₱${val.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
+      });
+      setEditingWalletId(null);
+      setEditBalance('');
+    } catch (error) {
+      toast({
+        title: 'Failed to update balance',
+        description: 'An error occurred while updating the wallet. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleAddWallet = () => {
-    if (!newWalletName.trim()) return;
-    addWallet({ type: newWalletType, name: newWalletName.trim(), balance: parseFloat(newWalletBalance) || 0 });
-    setNewWalletName(''); setNewWalletBalance(''); setShowAddWallet(false);
+  const handleAddWallet = async () => {
+    if (!newWalletName.trim()) {
+      toast({
+        title: 'Wallet name required',
+        description: 'Please enter a name for the wallet.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const balance = parseFloat(newWalletBalance) || 0;
+    if (balance < 0) {
+      toast({
+        title: 'Invalid balance',
+        description: 'Please enter a valid positive amount.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsAdding(true);
+    try {
+      await addWallet({ type: newWalletType, name: newWalletName.trim(), balance });
+      toast({
+        title: 'Wallet added',
+        description: `${newWalletName} has been added successfully.`,
+      });
+      setNewWalletName('');
+      setNewWalletBalance('');
+      setShowAddWallet(false);
+    } catch (error) {
+      toast({
+        title: 'Failed to add wallet',
+        description: 'An error occurred while adding the wallet. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  const handleDeleteWallet = (walletId: string) => {
+    setWalletToDelete(walletId);
+    setDeleteWalletDialogOpen(true);
+  };
+
+  const confirmDeleteWallet = async () => {
+    if (!walletToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteWallet(walletToDelete);
+      toast({
+        title: 'Wallet deleted',
+        description: 'The wallet has been removed.',
+      });
+      setDeleteWalletDialogOpen(false);
+      setWalletToDelete(null);
+    } catch (error) {
+      toast({
+        title: 'Failed to delete wallet',
+        description: 'An error occurred while deleting the wallet. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const initials = user?.name ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) : '??';
@@ -205,8 +299,8 @@ export default function SettingsPage() {
               <Input type="number" min="0" step="0.01" placeholder="0.00" value={newWalletBalance} onChange={(e) => setNewWalletBalance(e.target.value)} className="pl-8 h-10 rounded-xl bg-muted/40 border-border/60 text-sm" />
             </div>
             <div className="flex gap-2">
-              <Button size="sm" className="flex-1 h-9 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-800 shadow-sm" onClick={handleAddWallet} disabled={!newWalletName.trim()}>Add Wallet</Button>
-              <Button size="sm" variant="ghost" className="h-9 px-3 rounded-xl" onClick={() => setShowAddWallet(false)}>Cancel</Button>
+              <Button size="sm" className="flex-1 h-9 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-800 shadow-sm" onClick={handleAddWallet} disabled={!newWalletName.trim() || isAdding}>{isAdding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Add Wallet'}</Button>
+              <Button size="sm" variant="ghost" className="h-9 px-3 rounded-xl" onClick={() => setShowAddWallet(false)} disabled={isAdding}>Cancel</Button>
             </div>
           </div>
         )}
@@ -232,14 +326,14 @@ export default function SettingsPage() {
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-semibold">₱</span>
                       <Input type="number" min="0" step="0.01" value={editBalance} onChange={(e) => setEditBalance(e.target.value)} className="pl-5 h-8 text-sm rounded-lg" autoFocus />
                     </div>
-                    <button onClick={() => handleSaveBalance(wallet.id)} className="w-8 h-8 rounded-xl bg-accent/10 text-accent hover:bg-accent/20 flex items-center justify-center"><Check className="w-3.5 h-3.5" /></button>
-                    <button onClick={() => setEditingWalletId(null)} className="w-8 h-8 rounded-xl hover:bg-muted flex items-center justify-center text-muted-foreground"><X className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => handleSaveBalance(wallet.id)} disabled={isSaving} className="w-8 h-8 rounded-xl bg-accent/10 text-accent hover:bg-accent/20 flex items-center justify-center disabled:opacity-50">{isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}</button>
+                    <button onClick={() => setEditingWalletId(null)} disabled={isSaving} className="w-8 h-8 rounded-xl hover:bg-muted flex items-center justify-center text-muted-foreground disabled:opacity-50"><X className="w-3.5 h-3.5" /></button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="text-sm font-extrabold tabular-nums">₱{wallet.balance.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
                     <button onClick={() => { setEditingWalletId(wallet.id); setEditBalance(wallet.balance.toString()); }} className="w-8 h-8 rounded-xl hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-primary"><Pencil className="w-3.5 h-3.5" /></button>
-                    <button onClick={() => deleteWallet(wallet.id)} className="w-8 h-8 rounded-xl hover:bg-destructive/10 hover:text-destructive flex items-center justify-center text-muted-foreground"><Trash2 className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => handleDeleteWallet(wallet.id)} className="w-8 h-8 rounded-xl hover:bg-destructive/10 hover:text-destructive flex items-center justify-center text-muted-foreground"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 )}
               </div>
@@ -310,6 +404,19 @@ export default function SettingsPage() {
           <div className="flex gap-2">
             <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleClearData} className="bg-destructive rounded-xl">Delete Everything</AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteWalletDialogOpen} onOpenChange={setDeleteWalletDialogOpen}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Wallet</AlertDialogTitle>
+            <AlertDialogDescription>Are you sure you want to delete this wallet? This action cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex gap-2">
+            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteWallet} disabled={isDeleting} className="bg-destructive rounded-xl">{isDeleting ? 'Deleting...' : 'Delete Wallet'}</AlertDialogAction>
           </div>
         </AlertDialogContent>
       </AlertDialog>

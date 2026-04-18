@@ -436,7 +436,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [user, isHydrated]);
 
   // Debounce localStorage writes to batch operations instead of individual writes
-  const localStorageTimeoutRef = useRef<NodeJS.Timeout>();
+  const localStorageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
     if (!isHydrated) return;
 
@@ -898,7 +898,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [transactions, user?.id, totalWalletBalance, budgets]);
 
   // Debounce alert checks to prevent feedback loops
-  const alertTimeoutRef = useRef<NodeJS.Timeout>();
+  const alertTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastAlertCheckRef = useRef<number>(0);
 
   useEffect(() => {

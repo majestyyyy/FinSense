@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, CreditCard, Target, Receipt, PiggyBank } from 'lucide-react';
+import { Home, CreditCard, Target, Receipt, PiggyBank, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function BottomNav() {
@@ -14,6 +14,7 @@ export function BottomNav() {
     { href: '/budgets', label: 'Budget', icon: Target },
     { href: '/savings', label: 'Savings', icon: PiggyBank },
     { href: '/bills', label: 'Bills', icon: Receipt },
+    { href: '/settings', label: 'Settings', icon: Settings },
   ];
 
   return (
