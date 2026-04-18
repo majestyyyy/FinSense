@@ -460,24 +460,10 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // Wallet operations
   const addWallet = async (wallet: Omit<Wallet, 'id' | 'userId' | 'createdAt'>) => {
-    if (!user) return;
-
-    const activeUserId = await getActiveUserId(user);
-
-    if (!activeUserId) {
-      console.warn('No Supabase session found; falling back to local storage for addWallet.');
-      const fallbackWallet: Wallet = {
-        ...wallet,
-        id: `wlt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        userId: user.id,
-        createdAt: new Date(),
-      };
-      setWallets((prev) => [...prev, fallbackWallet]);
-      return;
-    }
+    if (!user?.id) return;
 
     try {
-      const newWallet = await supabaseHelpers.addWallet(activeUserId, wallet);
+      const newWallet = await supabaseHelpers.addWallet(user.id, wallet);
       setWallets((prev) => [...prev, mapWallet(newWallet)]);
       return;
     } catch (error: unknown) {
@@ -490,6 +476,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       }
     }
 
+    // Fallback to local storage
     const fallbackWallet: Wallet = {
       ...wallet,
       id: `wlt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
@@ -536,47 +523,17 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // Transaction operations
   const addTransaction = async (transaction: Omit<Transaction, 'id' | 'userId' | 'createdAt'>) => {
-    if (!user) return;
-
-    const activeUserId = await getActiveUserId(user);
-    if (!activeUserId) {
-      console.warn('No Supabase session found; falling back to local storage for addTransaction.');
-      const fallbackTransaction: Transaction = {
-        ...transaction,
-        id: `txn_${Date.now()}`,
-        userId: user.id,
-        createdAt: new Date(),
-      };
-      setTransactions((prev) => [...prev, fallbackTransaction]);
-
-      // Update wallet balance locally
-      if (transaction.walletId) {
-        const amount = transaction.type === 'income' ? transaction.amount : -transaction.amount;
-        setWallets((prev) =>
-          prev.map((w) =>
-            w.id === transaction.walletId ? { ...w, balance: w.balance + amount } : w
-          )
-        );
-      }
-      return;
-    }
+    if (!user?.id) return;
 
     try {
-      const newTransaction = await supabaseHelpers.addTransaction(activeUserId, transaction);
+      const newTransaction = await supabaseHelpers.addTransaction(user.id, transaction);
       setTransactions((prev) => [...prev, mapTransaction(newTransaction)]);
-
-      // Update wallet balance
-      if (transaction.walletId) {
-        const amount = transaction.type === 'income' ? transaction.amount : -transaction.amount;
-        await updateWallet(transaction.walletId, {
-          balance: wallets.find((w) => w.id === transaction.walletId)!.balance + amount,
-        });
-      }
       return;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Supabase addTransaction error:', error);
     }
 
+    // Fallback to local storage
     const fallbackTransaction: Transaction = {
       ...transaction,
       id: `txn_${Date.now()}`,
@@ -584,16 +541,6 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       createdAt: new Date(),
     };
     setTransactions((prev) => [...prev, fallbackTransaction]);
-
-    // Update wallet balance locally
-    if (transaction.walletId) {
-      const amount = transaction.type === 'income' ? transaction.amount : -transaction.amount;
-      setWallets((prev) =>
-        prev.map((w) =>
-          w.id === transaction.walletId ? { ...w, balance: w.balance + amount } : w
-        )
-      );
-    }
   };
 
   const updateTransaction = async (id: string, updates: Partial<Transaction>) => {
@@ -687,13 +634,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
 
     try {
-      const activeUserId = await getActiveUserId(user);
-      if (!activeUserId) {
-        console.warn('No Supabase session found; falling back to local storage for setBudget.');
-        throw new Error('No active Supabase session');
-      }
-
-      const newBudget = await supabaseHelpers.setBudget(activeUserId, category, limit, currentMonth);
+      const newBudget = await supabaseHelpers.setBudget(user.id, category, limit, currentMonth);
       setBudgets((prev) => [...prev, mapBudget(newBudget)]);
       return;
     } catch (error) {
@@ -744,29 +685,17 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // Chat operations
   const addChatMessage = async (message: Omit<ChatMessage, 'id' | 'userId' | 'timestamp'>) => {
-    if (!user) return;
-
-    const activeUserId = await getActiveUserId(user);
-    if (!activeUserId) {
-      console.warn('No Supabase session found; falling back to local storage for addChatMessage.');
-      const fallbackMessage: ChatMessage = {
-        ...message,
-        id: `msg_${Date.now()}`,
-        userId: user.id,
-        timestamp: new Date(),
-      };
-      setChatMessages((prev) => [...prev, fallbackMessage]);
-      return;
-    }
+    if (!user?.id) return;
 
     try {
-      const newMessage = await supabaseHelpers.addChatMessage(activeUserId, message);
+      const newMessage = await supabaseHelpers.addChatMessage(user.id, message);
       setChatMessages((prev) => [...prev, mapChatMessage(newMessage)]);
       return;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Supabase addChatMessage error:', error);
     }
 
+    // Fallback to local storage
     const fallbackMessage: ChatMessage = {
       ...message,
       id: `msg_${Date.now()}`,
@@ -787,29 +716,17 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // Alert operations
   const addAlert = async (alert: Omit<Alert, 'id' | 'userId' | 'createdAt'>) => {
-    if (!user) return;
-
-    const activeUserId = await getActiveUserId(user);
-    if (!activeUserId) {
-      console.warn('No Supabase session found; falling back to local storage for addAlert.');
-      const fallbackAlert: Alert = {
-        ...alert,
-        id: `alt_${Date.now()}`,
-        userId: user.id,
-        createdAt: new Date(),
-      };
-      setAlerts((prev) => [...prev, fallbackAlert]);
-      return;
-    }
+    if (!user?.id) return;
 
     try {
-      const newAlert = await supabaseHelpers.addAlert(activeUserId, alert);
+      const newAlert = await supabaseHelpers.addAlert(user.id, alert);
       setAlerts((prev) => [...prev, mapAlert(newAlert)]);
       return;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Supabase addAlert error:', error);
     }
 
+    // Fallback to local storage
     const fallbackAlert: Alert = {
       ...alert,
       id: `alt_${Date.now()}`,

@@ -135,13 +135,17 @@ export default function SettingsPage() {
     }
 
     setIsAdding(true);
+    const walletName = newWalletName.trim();
+    
     try {
-      console.log('Adding wallet:', { type: newWalletType, name: newWalletName.trim(), balance });
-      await addWallet({ type: newWalletType, name: newWalletName.trim(), balance });
+      console.log('Adding wallet:', { type: newWalletType, name: walletName, balance });
+      await addWallet({ type: newWalletType, name: walletName, balance });
+      
       toast({
-        title: 'Wallet added',
-        description: `${newWalletName} has been added successfully.`,
+        title: '✓ Wallet added',
+        description: `${walletName} is now ready to use.`,
       });
+      
       setNewWalletName('');
       setNewWalletBalance('');
       setShowAddWallet(false);
@@ -151,14 +155,14 @@ export default function SettingsPage() {
       // Check if it's a duplicate name error
       if ((error as any)?.message?.includes?.('duplicate') || (error as any)?.message?.includes?.('unique')) {
         toast({
-          title: 'Wallet name already exists',
-          description: 'You already have a wallet with this name. Please use a different name.',
+          title: 'Wallet already exists',
+          description: 'You already have a wallet named ' + walletName,
           variant: 'destructive',
         });
       } else {
         toast({
           title: 'Failed to add wallet',
-          description: 'An error occurred while adding the wallet. Please try again.',
+          description: 'Please check your connection and try again.',
           variant: 'destructive',
         });
       }
