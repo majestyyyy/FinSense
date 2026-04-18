@@ -4,21 +4,19 @@ import { useFinance } from '@/lib/context/FinanceContext';
 import { CategoryBreakdownChart, SpendingTrendsChart, IncomeVsExpensesChart } from '@/components/DashboardCharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowDownRight, ArrowUpRight, AlertTriangle, TrendingUp, CreditCard, Target, Banknote, Building2, Smartphone, Wallet, Receipt, PiggyBank } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, AlertTriangle, TrendingUp, CreditCard, Target, Banknote, Building2, Wallet, Receipt, PiggyBank } from 'lucide-react';
 import Link from 'next/link';
 import { WalletType } from '@/lib/types';
 
 const walletIcons: Record<WalletType, React.ComponentType<{ className?: string }>> = {
   cash: Banknote,
   bank: Building2,
-  ewallet: Smartphone,
   digital_bank: CreditCard,
 };
 
 const walletGradients: Record<WalletType, string> = {
   cash: 'from-emerald-500 to-teal-500',
   bank: 'from-cyan-500 to-blue-600',
-  ewallet: 'from-emerald-500 to-teal-600',
   digital_bank: 'from-rose-500 to-pink-500',
 };
 
@@ -51,7 +49,7 @@ const getWalletGradient = (walletType: WalletType, walletName: string): string =
     return 'from-emerald-500 to-teal-500';
   }
   
-  if (walletType === 'ewallet' || walletType === 'digital_bank') {
+  if (walletType === 'digital_bank') {
     const nameLower = walletName.toLowerCase();
     // Check for exact matches
     for (const [key, gradient] of Object.entries(bankColors)) {
@@ -59,8 +57,8 @@ const getWalletGradient = (walletType: WalletType, walletName: string): string =
         return gradient;
       }
     }
-    // Default for digital banks/e-wallets
-    return walletType === 'digital_bank' ? 'from-rose-500 to-pink-500' : 'from-emerald-500 to-teal-600';
+    // Default for digital banks
+    return 'from-rose-500 to-pink-500';
   }
   
   if (walletType === 'bank') {

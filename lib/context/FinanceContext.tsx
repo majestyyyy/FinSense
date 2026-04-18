@@ -30,7 +30,7 @@ interface FinanceContextType {
   updateWallet: (id: string, updates: Partial<Wallet>) => Promise<void>;
   deleteWallet: (id: string) => Promise<void>;
   totalWalletBalance: number;
-  completeSetup: () => void;
+  completeSetup: () => Promise<void>;
 
   // Transactions
   transactions: Transaction[];

@@ -71,6 +71,7 @@ export default function OnboardingPage() {
   const [newBalance, setNewBalance] = useState('');
   const [nameError, setNameError] = useState('');
   const [balanceError, setBalanceError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const activeMeta = WALLET_TYPES.find((w) => w.type === activeType)!;
 
@@ -88,6 +89,14 @@ export default function OnboardingPage() {
       return;
     }
 
+    // Check for duplicate names across all entries
+    if (entries.some((e) => e.name.toLowerCase() === newName.trim().toLowerCase())) {
+      setNameError('You already added an account with this name');
+      return;
+    }
+
+    console.log('Adding entry:', { type: activeType, name: newName.trim(), balance: newBalance });
+    
     setEntries((prev) => [
       ...prev,
       { type: activeType, name: newName.trim(), balance: newBalance },
@@ -101,23 +110,32 @@ export default function OnboardingPage() {
   };
 
   const handleFinish = async () => {
+    setIsSubmitting(true);
     try {
+      console.log('Starting wallet creation for entries:', entries);
+      
       // Save all wallets first, wait for completion
       await Promise.all(
-        entries.map((e) =>
-          addWallet({
+        entries.map((e) => {
+          console.log(`Creating wallet: ${e.type} - ${e.name}`);
+          return addWallet({
             type: e.type,
             name: e.name,
             balance: parseFloat(e.balance) || 0,
-          })
-        )
+          });
+        })
       );
+      
+      console.log('All wallets created, marking setup complete');
       // Then mark setup complete
       await completeSetup();
+      
+      console.log('Setup complete, navigating to dashboard');
       // Finally navigate
       router.push('/dashboard');
     } catch (error) {
       console.error('Onboarding error:', error);
+      setIsSubmitting(false);
       // Still allow navigation on error after brief delay
       setTimeout(() => {
         router.push('/dashboard');
@@ -287,15 +305,16 @@ export default function OnboardingPage() {
           <Button
             onClick={handleFinish}
             className="w-full h-12 gap-2 bg-linear-to-r from-emerald-600 to-black shadow-lg shadow-primary/25 text-base font-semibold rounded-xl"
-            disabled={entries.length === 0}
+            disabled={entries.length === 0 || isSubmitting}
           >
-            Start Tracking
-            <ArrowRight className="w-4 h-4" />
+            {isSubmitting ? 'Processing...' : 'Start Tracking'}
+            {!isSubmitting && <ArrowRight className="w-4 h-4" />}
           </Button>
           <Button
             onClick={handleSkip}
             variant="ghost"
             className="w-full text-muted-foreground h-10"
+            disabled={isSubmitting}
           >
             Skip for now
           </Button>

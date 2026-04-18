@@ -8,7 +8,7 @@ export interface User {
 }
 
 // Wallet Types
-export type WalletType = 'cash' | 'bank' | 'ewallet' | 'digital_bank';
+export type WalletType = 'cash' | 'bank' | 'digital_bank';
 
 export interface Wallet {
   id: string;

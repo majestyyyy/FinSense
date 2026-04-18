@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useFinance } from '@/lib/context/FinanceContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LogOut, Trash2, Download, AlertCircle, User, Mail, Calendar, Banknote, Building2, Smartphone, CreditCard, Plus, Pencil, Check, X, Moon, Sun, Settings as SettingsIcon, Loader2 } from 'lucide-react';
+import { LogOut, Trash2, Download, AlertCircle, User, Mail, Calendar, Banknote, Building2, CreditCard, Plus, Pencil, Check, X, Moon, Sun, Settings as SettingsIcon, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from 'next-themes';
 import { useToast } from '@/hooks/use-toast';
@@ -22,7 +22,6 @@ import {
 const WALLET_METAS: Record<WalletType, { label: string; icon: React.ComponentType<{ className?: string }>; gradient: string; color: string }> = {
   cash: { label: 'Cash', icon: Banknote, gradient: 'from-emerald-500 to-teal-500', color: 'text-emerald-600 bg-emerald-100 dark:bg-emerald-500/20 dark:text-emerald-400' },
   bank: { label: 'Bank Account', icon: Building2, gradient: 'from-cyan-500 to-blue-600', color: 'text-blue-600 bg-blue-100 dark:bg-blue-500/20 dark:text-blue-400' },
-  ewallet: { label: 'E-Wallet', icon: Smartphone, gradient: 'from-emerald-500 to-teal-600', color: 'text-emerald-600 bg-emerald-100 dark:bg-emerald-500/20 dark:text-emerald-400' },
   digital_bank: { label: 'Digital Bank', icon: CreditCard, gradient: 'from-rose-500 to-pink-500', color: 'text-rose-600 bg-rose-100 dark:bg-rose-500/20 dark:text-rose-400' },
 };
 
@@ -137,6 +136,7 @@ export default function SettingsPage() {
 
     setIsAdding(true);
     try {
+      console.log('Adding wallet:', { type: newWalletType, name: newWalletName.trim(), balance });
       await addWallet({ type: newWalletType, name: newWalletName.trim(), balance });
       toast({
         title: 'Wallet added',
@@ -146,11 +146,22 @@ export default function SettingsPage() {
       setNewWalletBalance('');
       setShowAddWallet(false);
     } catch (error) {
-      toast({
-        title: 'Failed to add wallet',
-        description: 'An error occurred while adding the wallet. Please try again.',
-        variant: 'destructive',
-      });
+      console.error('Error adding wallet:', error);
+      
+      // Check if it's a duplicate name error
+      if ((error as any)?.message?.includes?.('duplicate') || (error as any)?.message?.includes?.('unique')) {
+        toast({
+          title: 'Wallet name already exists',
+          description: 'You already have a wallet with this name. Please use a different name.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Failed to add wallet',
+          description: 'An error occurred while adding the wallet. Please try again.',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setIsAdding(false);
     }

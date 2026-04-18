@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS public.users (
 CREATE TABLE IF NOT EXISTS public.wallets (
   id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID(),
   user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  type TEXT NOT NULL CHECK (type IN ('cash', 'bank', 'ewallet', 'digital_bank')),
+  type TEXT NOT NULL CHECK (type IN ('cash', 'bank', 'digital_bank')),
   name TEXT NOT NULL,
   balance DECIMAL(15, 2) NOT NULL DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::TEXT, NOW()),
