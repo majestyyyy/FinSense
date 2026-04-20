@@ -520,40 +520,41 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // Wallet operations
   const addWallet = async (wallet: Omit<Wallet, 'id' | 'userId' | 'createdAt'>) => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      throw new Error('User not authenticated');
+    }
 
     try {
       const newWallet = await supabaseHelpers.addWallet(user.id, wallet);
-      setWallets((prev) => [...prev, mapWallet(newWallet)]);
-      return;
+      const mapped = mapWallet(newWallet);
+      setWallets((prev) => [...prev, mapped]);
+      return mapped;
     } catch (error: unknown) {
       console.error('Supabase addWallet error:', error);
 
-      if ((error as any)?.code === '42501' || (error as any)?.message?.includes?.('row-level security')) {
-        console.warn('RLS blocked addWallet; falling back to local storage.');
-      } else {
-        console.warn('addWallet error, fallback to local storage.');
-      }
+      // Fallback to local storage
+      const fallbackWallet: Wallet = {
+        ...wallet,
+        id: `wlt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        userId: user.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      setWallets((prev) => [...prev, fallbackWallet]);
+      return fallbackWallet;
     }
-
-    // Fallback to local storage
-    const fallbackWallet: Wallet = {
-      ...wallet,
-      id: `wlt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      userId: user.id,
-      createdAt: new Date(),
-    };
-    setWallets((prev) => [...prev, fallbackWallet]);
   };
 
   const updateWallet = async (id: string, updates: Partial<Wallet>) => {
     try {
       const updated = await supabaseHelpers.updateWallet(id, updates);
       setWallets((prev) => prev.map((w) => (w.id === id ? mapWallet(updated) : w)));
-      return;
+      return mapWallet(updated);
     } catch (error) {
       console.error('Supabase updateWallet error:', error);
-      setWallets((prev) => prev.map((w) => (w.id === id ? { ...w, ...updates } : w)));
+      const updatedLocal = { ...wallets.find((w) => w.id === id), ...updates };
+      setWallets((prev) => prev.map((w) => (w.id === id ? { ...w, ...updates } as Wallet : w)));
+      return updatedLocal as Wallet;
     }
   };
 

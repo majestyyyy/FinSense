@@ -7,17 +7,15 @@ const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY ?? '';
 let ai: GoogleGenAI | null = null;
 let currentModelIndex = 0;
 
-// List of models to try in order of preference (using newer models from Google docs)
+// List of models to try in order of preference (free tier models)
 const MODEL_CASCADE = [
-  'gemini-3-flash-preview',
+  'gemini-3.1-flash-lite-preview',
   'gemini-2.0-flash',
   'gemini-1.5-flash',
-  'gemini-1.5-pro',
 ];
 
 if (API_KEY) {
   try {
-    // Pass API key explicitly since we're using environment variable
     ai = new GoogleGenAI({ apiKey: API_KEY });
   } catch (error) {
     console.error('Failed to initialize Gemini:', error);
@@ -89,7 +87,7 @@ async function retryWithBackoff(
       const errMsg = error instanceof Error ? error.message : String(error);
       
       // For 429 quota errors, don't retry multiple times - quota won't change soon
-      if (errMsg.includes('429') || errMsg.includes('quota')) {
+      if (errMsg.includes('429') || errMsg.includes('quota') || errMsg.includes('RESOURCE_EXHAUSTED') || errMsg.includes('exceeded your current quota')) {
         const retryMatch = errMsg.match(/retry in ([0-9.]+)s/i);
         if (retryMatch) {
           const delaySecs = Math.ceil(parseFloat(retryMatch[1]));
@@ -247,55 +245,83 @@ ADVICE GUIDELINES:
 Keep responses concise (under 250 words). Use bullet points for lists. Format currency with ₱ and commas.`;
 
   try {
-    // Use retry logic for API calls with new API format
+    // Use retry logic for API calls
     const result = await retryWithBackoff(
       async (modelName: string) => {
-        return await ai!.models.generateContent({
+        if (!ai) throw new Error('AI not initialized');
+        const response = await ai.models.generateContent({
           model: modelName,
           contents: `${systemContext}\n\nUser Query: ${message}`,
         });
+        return response;
       },
       3,
       1000
     );
     
-    // New API returns text directly
-    const text = result.text;
+    // Extract text from response
+    let text = '';
+    if (typeof result.text === 'function') {
+      text = result.text();
+    } else if (result.text) {
+      text = result.text;
+    } else if (result.response?.text && typeof result.response.text === 'function') {
+      text = result.response.text();
+    } else if (result.response?.text) {
+      text = result.response.text;
+    } else {
+      text = JSON.stringify(result).substring(0, 500);
+    }
     return { message: text };
   } catch (error: unknown) {
     console.error('Gemini API error:', error);
 
     const errMsg = error instanceof Error ? error.message : String(error);
     
+    // Try to extract status from error JSON if present
+    let statusCode = '';
+    try {
+      if (error instanceof Error && error.message.includes('{"error"')) {
+        const jsonMatch = error.message.match(/"status":"([^"]+)"/);
+        if (jsonMatch) {
+          statusCode = jsonMatch[1];
+        }
+      }
+    } catch (e) {
+      // Parsing failed, continue with regular message
+    }
+    
+    const fullError = statusCode ? `${statusCode}: ${errMsg}` : errMsg;
+    
     // Handle authentication errors
-    if (errMsg.includes('403') || errMsg.includes('unregistered')) {
+    if (fullError.includes('403') || fullError.includes('unregistered')) {
       return {
         message: `**🔑 API Key Issue Detected**\n\nThe API key appears to be invalid or not recognized. Please:\n\n1. Open \`.env.local\` in your project\n2. Check that \`NEXT_PUBLIC_GEMINI_API_KEY\` has a valid key\n3. Get a new key at https://aistudio.google.com/app/apikey if needed\n4. Restart your dev server: \`npm run dev\`\n\nQuick tips while you wait:\n• Your monthly expenses: ₱${financialData?.totalExpenses.toLocaleString('en-PH', { minimumFractionDigits: 2 }) ?? 'N/A'}\n• You're saving: ₱${((financialData?.totalIncome ?? 0) - (financialData?.totalExpenses ?? 0)).toLocaleString('en-PH', { minimumFractionDigits: 2 }) ?? 'N/A'} monthly\n• Check your Budget page for more insights`,
       };
     }
 
-    // Handle model not found errors - all models exhausted
-    if (errMsg.includes('404') || errMsg.includes('not found')) {
-      return {
-        message: `**⚠️ No AI Models Available**\n\nAll available AI models are currently unavailable in your region or with your API key tier.\n\n**Tried:** ${MODEL_CASCADE.slice(0, currentModelIndex + 1).map((m, i) => i === currentModelIndex ? `**${m}** (failed)` : m).join(' → ')}\n\n**What you can do:**\n1. Ensure your API key has billing enabled (free tier has limited model access)\n2. Check available models at https://aistudio.google.com\n3. Enable billing to access more models\n\n**Your financial summary:**\n• Income: ₱${financialData?.totalIncome.toLocaleString('en-PH', { minimumFractionDigits: 2 }) ?? 'N/A'}\n• Expenses: ₱${financialData?.totalExpenses.toLocaleString('en-PH', { minimumFractionDigits: 2 }) ?? 'N/A'}\n• Savings: ₱${((financialData?.totalIncome ?? 0) - (financialData?.totalExpenses ?? 0)).toLocaleString('en-PH', { minimumFractionDigits: 2 }) ?? 'N/A'}`,
-      };
-    }
-
-    // Handle service unavailable (503) - usually temporary
-    if (errMsg.includes('503') || errMsg.includes('high demand')) {
-      return {
-        message: `**⚠️ Service Temporarily Busy**\n\nGoogle's AI service is experiencing high demand right now. This is usually temporary!\n\n**What you can do:**\n• Try again in a few seconds\n• Ask a simpler question\n• Use other features (Dashboard, Budgets, Transactions)\n\n**In the meantime, here's your financial snapshot:**\n• Income: ₱${financialData?.totalIncome.toLocaleString('en-PH', { minimumFractionDigits: 2 }) ?? 'N/A'}\n• Expenses: ₱${financialData?.totalExpenses.toLocaleString('en-PH', { minimumFractionDigits: 2 }) ?? 'N/A'}\n• Savings: ₱${((financialData?.totalIncome ?? 0) - (financialData?.totalExpenses ?? 0)).toLocaleString('en-PH', { minimumFractionDigits: 2 }) ?? 'N/A'}`,
-      };
-    }
-
-    // Handle quota/rate limit errors
-    if (errMsg.includes('429') || errMsg.includes('quota') || errMsg.includes('RESOURCE_EXHAUSTED')) {
+    // Handle quota/rate limit errors FIRST (before 404)
+    if (fullError.includes('429') || fullError.includes('quota') || fullError.includes('RESOURCE_EXHAUSTED') || fullError.includes('exceeded your current quota')) {
       // Extract retry delay if available
       const retryMatch = errMsg.match(/retry in ([0-9.]+)s/i);
       const retryDelay = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) : 60;
       
       return {
         message: `**⚠️ Free Tier Daily Quota Exceeded**\n\nYou've hit the limit for **free tier** Gemini API usage today. The API says to retry in **${retryDelay} seconds**.\n\n**Free Tier Limits:**\n• 15 requests/minute\n• 1 million tokens/day\n• After hitting limit: Blocked until next calendar day (UTC)\n\n**Your Solutions:**\n\n1️⃣ **Wait it out** (Easiest)\n   - Quota window resets at midnight UTC\n   - You can try again then\n\n2️⃣ **Enable Billing** (Recommended)\n   - Gives you immediate access\n   - Quota increases to 15,000+ requests/day\n   - Pay only for what you use (~$0.50/month for casual testing)\n   - Steps:\n     1. Go to: https://console.cloud.google.com/billing\n     2. Add a payment method\n     3. Restart this app (npm run dev)\n     4. Try again - should work instantly!\n\n**📊 While You Wait - Your Financial Summary:**\n• Monthly Income: ₱${financialData?.totalIncome.toLocaleString('en-PH', { minimumFractionDigits: 2 }) ?? 'N/A'}\n• Monthly Expenses: ₱${financialData?.totalExpenses.toLocaleString('en-PH', { minimumFractionDigits: 2 }) ?? 'N/A'}\n• Monthly Savings: ₱${((financialData?.totalIncome ?? 0) - (financialData?.totalExpenses ?? 0)).toLocaleString('en-PH', { minimumFractionDigits: 2 }) ?? 'N/A'}\n\nCheck your **Dashboard** for detailed charts and insights!`,
+      };
+    }
+
+    // Handle model not found errors - all models exhausted
+    if (fullError.includes('404') || fullError.includes('not found')) {
+      return {
+        message: `**⚠️ No AI Models Available**\n\nAll available AI models are currently unavailable in your region or with your API key tier.\n\n**Tried:** ${MODEL_CASCADE.slice(0, currentModelIndex + 1).map((m, i) => i === currentModelIndex ? `**${m}** (failed)` : m).join(' → ')}\n\n**What you can do:**\n1. Ensure your API key has billing enabled (free tier has limited model access)\n2. Check available models at https://aistudio.google.com\n3. Enable billing to access more models\n\n**Your financial summary:**\n• Income: ₱${financialData?.totalIncome.toLocaleString('en-PH', { minimumFractionDigits: 2 }) ?? 'N/A'}\n• Expenses: ₱${financialData?.totalExpenses.toLocaleString('en-PH', { minimumFractionDigits: 2 }) ?? 'N/A'}\n• Savings: ₱${((financialData?.totalIncome ?? 0) - (financialData?.totalExpenses ?? 0)).toLocaleString('en-PH', { minimumFractionDigits: 2 }) ?? 'N/A'}`,
+      };
+    }
+
+    // Handle service unavailable (503) - usually temporary
+    if (fullError.includes('503') || fullError.includes('high demand')) {
+      return {
+        message: `**⚠️ Service Temporarily Busy**\n\nGoogle's AI service is experiencing high demand right now. This is usually temporary!\n\n**What you can do:**\n• Try again in a few seconds\n• Ask a simpler question\n• Use other features (Dashboard, Budgets, Transactions)\n\n**In the meantime, here's your financial snapshot:**\n• Income: ₱${financialData?.totalIncome.toLocaleString('en-PH', { minimumFractionDigits: 2 }) ?? 'N/A'}\n• Expenses: ₱${financialData?.totalExpenses.toLocaleString('en-PH', { minimumFractionDigits: 2 }) ?? 'N/A'}\n• Savings: ₱${((financialData?.totalIncome ?? 0) - (financialData?.totalExpenses ?? 0)).toLocaleString('en-PH', { minimumFractionDigits: 2 }) ?? 'N/A'}`,
       };
     }
 

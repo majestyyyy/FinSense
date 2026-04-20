@@ -89,11 +89,15 @@ export default function SettingsPage() {
     
     setIsSaving(true);
     try {
-      await updateWallet(walletId, { balance: val });
+      const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Update timeout')), 15000)
+      );
+      await Promise.race([updateWallet(walletId, { balance: val }), timeout]);
       setEditingWalletId(null);
       setEditBalance('');
     } catch (error) {
-      // Handle error silently
+      console.error('Error updating balance:', error);
+      setEditingWalletId(null);
     } finally {
       setIsSaving(false);
     }
@@ -114,13 +118,17 @@ export default function SettingsPage() {
     
     try {
       console.log('Adding wallet:', { type: newWalletType, name: walletName, balance });
-      await addWallet({ type: newWalletType, name: walletName, balance });
+      const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Add wallet timeout')), 15000)
+      );
+      await Promise.race([addWallet({ type: newWalletType, name: walletName, balance }), timeout]);
       
       setNewWalletName('');
       setNewWalletBalance('');
       setShowAddWallet(false);
     } catch (error) {
       console.error('Error adding wallet:', error);
+      setShowAddWallet(false);
     } finally {
       setIsAdding(false);
     }
