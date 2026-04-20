@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useFinance } from '@/lib/context/FinanceContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LogOut, Trash2, Download, AlertCircle, User, Mail, Calendar, Banknote, Building2, CreditCard, Plus, Pencil, Check, X, Moon, Sun, Settings as SettingsIcon, Loader2 } from 'lucide-react';
+import { LogOut, Trash2, AlertCircle, User, Mail, Calendar, Banknote, Building2, CreditCard, Plus, Pencil, Check, X, Moon, Sun, Settings as SettingsIcon, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from 'next-themes';
 import { WalletType } from '@/lib/types';
@@ -67,18 +67,6 @@ export default function SettingsPage() {
     // preserve server data; this only logs out and clears local state
     handleLogout();
     setDeleteDialogOpen(false);
-  };
-
-  const handleExportData = () => {
-    const exportData = { user, transactions, budgets, chatMessages, wallets, exportDate: new Date().toISOString() };
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `finsense-export-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
   };
 
   const handleSaveBalance = async (walletId: string) => {
@@ -309,20 +297,6 @@ export default function SettingsPage() {
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* Data Management */}
-      <div className="rounded-2xl border border-border/40 bg-card overflow-hidden max-w-4xl mx-auto w-full">
-        <div className="px-4 py-3 border-b border-border/30">
-          <p className="text-sm font-bold">Data Management</p>
-        </div>
-        <div className="p-4 space-y-3">
-          <Button onClick={handleExportData} variant="outline" className="w-full justify-start gap-2.5 h-11 rounded-xl border-border/50 hover:border-primary/40 hover:bg-primary/5">
-            <Download className="w-4 h-4 text-primary" />
-            Export My Data (JSON)
-          </Button>
-          <p className="text-xs text-muted-foreground">Download all transactions, budgets, and chat history.</p>
         </div>
       </div>
 

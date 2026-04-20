@@ -584,11 +584,14 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // Transaction operations
   const addTransaction = async (transaction: Omit<Transaction, 'id' | 'userId' | 'createdAt'>) => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      throw new Error('User not authenticated');
+    }
 
     try {
       const newTransaction = await supabaseHelpers.addTransaction(user.id, transaction);
-      setTransactions((prev) => [...prev, mapTransaction(newTransaction)]);
+      const mapped = mapTransaction(newTransaction);
+      setTransactions((prev) => [...prev, mapped]);
       
       // Update wallet balance
       if (transaction.walletId) {
@@ -613,28 +616,32 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
           }
         }
       }
-      return;
+      return mapped;
     } catch (error: unknown) {
       console.error('Supabase addTransaction error:', error);
-    }
 
-    // Fallback to local storage
-    const fallbackTransaction: Transaction = {
-      ...transaction,
-      id: `txn_${Date.now()}`,
-      userId: user.id,
-      createdAt: new Date(),
-    };
-    setTransactions((prev) => [...prev, fallbackTransaction]);
+      // Fallback to local storage
+      const fallbackTransaction: Transaction = {
+        ...transaction,
+        id: `txn_${Date.now()}`,
+        userId: user.id,
+        createdAt: new Date(),
+      };
+      setTransactions((prev) => [...prev, fallbackTransaction]);
+      return fallbackTransaction;
+    }
   };
 
   const updateTransaction = async (id: string, updates: Partial<Transaction>) => {
     const oldTransaction = transactions.find((t) => t.id === id);
-    if (!oldTransaction) return;
+    if (!oldTransaction) {
+      throw new Error('Transaction not found');
+    }
 
     try {
       const updated = await supabaseHelpers.updateTransaction(id, updates);
-      setTransactions((prev) => prev.map((t) => (t.id === id ? mapTransaction(updated) : t)));
+      const mapped = mapTransaction(updated);
+      setTransactions((prev) => prev.map((t) => (t.id === id ? mapped : t)));
 
       // Handle wallet balance updates
       const walletIds = new Set<string>();
@@ -680,10 +687,12 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
           console.warn('Failed to refetch wallets:', error);
         }
       }
-      return;
+      return mapped;
     } catch (error) {
       console.error('Supabase updateTransaction error:', error);
-      setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates } : t)));
+      const updatedLocal = { ...oldTransaction, ...updates };
+      setTransactions((prev) => prev.map((t) => (t.id === id ? updatedLocal as Transaction : t)));
+      return updatedLocal as Transaction;
     }
   };
 

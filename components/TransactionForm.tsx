@@ -57,7 +57,7 @@ export function TransactionForm({ isOpen, onClose, editingId }: TransactionFormP
     }
   }, [editingTransaction, isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -81,34 +81,45 @@ export function TransactionForm({ isOpen, onClose, editingId }: TransactionFormP
     // For income, auto-set category to 'income'
     const transactionCategory = type === 'income' ? 'income' : category;
 
-    if (editingTransaction) {
-      updateTransaction(editingTransaction.id, {
-        type,
-        category: transactionCategory,
-        amount: numAmount,
-        description,
-        date: new Date(date),
-        walletId,
-      });
-    } else {
-      addTransaction({
-        type,
-        category: transactionCategory,
-        amount: numAmount,
-        description,
-        date: new Date(date),
-        walletId,
-      });
-    }
+    try {
+      if (editingTransaction) {
+        const timeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Update timeout')), 10000)
+        );
+        await Promise.race([updateTransaction(editingTransaction.id, {
+          type,
+          category: transactionCategory,
+          amount: numAmount,
+          description,
+          date: new Date(date),
+          walletId,
+        }), timeout]);
+      } else {
+        const timeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Add timeout')), 10000)
+        );
+        await Promise.race([addTransaction({
+          type,
+          category: transactionCategory,
+          amount: numAmount,
+          description,
+          date: new Date(date),
+          walletId,
+        }), timeout]);
+      }
 
-    // Reset form
-    setType('expense');
-    setCategory('');
-    setAmount('');
-    setDescription('');
-    setDate(new Date().toISOString().split('T')[0]);
-    setWalletId(userWallets[0]?.id || '');
-    onClose();
+      // Reset form
+      setType('expense');
+      setCategory('');
+      setAmount('');
+      setDescription('');
+      setDate(new Date().toISOString().split('T')[0]);
+      setWalletId(userWallets[0]?.id || '');
+      onClose();
+    } catch (error) {
+      console.error('Error submitting transaction:', error);
+      setError('Failed to save transaction. Please try again.');
+    }
   };
 
   const handleClose = () => {
