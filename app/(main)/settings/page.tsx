@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { LogOut, Trash2, Download, AlertCircle, User, Mail, Calendar, Banknote, Building2, CreditCard, Plus, Pencil, Check, X, Moon, Sun, Settings as SettingsIcon, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from 'next-themes';
-import { useToast } from '@/hooks/use-toast';
 import { WalletType } from '@/lib/types';
 import {
   AlertDialog,
@@ -28,7 +27,6 @@ const WALLET_METAS: Record<WalletType, { label: string; icon: React.ComponentTyp
 export default function SettingsPage() {
   const router = useRouter();
   const { user, setUser, transactions, budgets, chatMessages, wallets, addWallet, updateWallet, deleteWallet, totalWalletBalance } = useFinance();
-  const { toast } = useToast();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [deleteWalletDialogOpen, setDeleteWalletDialogOpen] = useState(false);
@@ -86,29 +84,16 @@ export default function SettingsPage() {
   const handleSaveBalance = async (walletId: string) => {
     const val = parseFloat(editBalance);
     if (isNaN(val) || val < 0) {
-      toast({
-        title: 'Invalid amount',
-        description: 'Please enter a valid positive amount.',
-        variant: 'destructive',
-      });
       return;
     }
     
     setIsSaving(true);
     try {
       await updateWallet(walletId, { balance: val });
-      toast({
-        title: 'Balance updated',
-        description: `Wallet balance updated to ₱${val.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
-      });
       setEditingWalletId(null);
       setEditBalance('');
     } catch (error) {
-      toast({
-        title: 'Failed to update balance',
-        description: 'An error occurred while updating the wallet. Please try again.',
-        variant: 'destructive',
-      });
+      // Handle error silently
     } finally {
       setIsSaving(false);
     }
@@ -116,21 +101,11 @@ export default function SettingsPage() {
 
   const handleAddWallet = async () => {
     if (!newWalletName.trim()) {
-      toast({
-        title: 'Wallet name required',
-        description: 'Please enter a name for the wallet.',
-        variant: 'destructive',
-      });
       return;
     }
 
     const balance = parseFloat(newWalletBalance) || 0;
     if (balance < 0) {
-      toast({
-        title: 'Invalid balance',
-        description: 'Please enter a valid positive amount.',
-        variant: 'destructive',
-      });
       return;
     }
 
@@ -141,31 +116,11 @@ export default function SettingsPage() {
       console.log('Adding wallet:', { type: newWalletType, name: walletName, balance });
       await addWallet({ type: newWalletType, name: walletName, balance });
       
-      toast({
-        title: '✓ Wallet added',
-        description: `${walletName} is now ready to use.`,
-      });
-      
       setNewWalletName('');
       setNewWalletBalance('');
       setShowAddWallet(false);
     } catch (error) {
       console.error('Error adding wallet:', error);
-      
-      // Check if it's a duplicate name error
-      if ((error as any)?.message?.includes?.('duplicate') || (error as any)?.message?.includes?.('unique')) {
-        toast({
-          title: 'Wallet already exists',
-          description: 'You already have a wallet named ' + walletName,
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Failed to add wallet',
-          description: 'Please check your connection and try again.',
-          variant: 'destructive',
-        });
-      }
     } finally {
       setIsAdding(false);
     }
@@ -182,18 +137,10 @@ export default function SettingsPage() {
     setIsDeleting(true);
     try {
       await deleteWallet(walletToDelete);
-      toast({
-        title: 'Wallet deleted',
-        description: 'The wallet has been removed.',
-      });
       setDeleteWalletDialogOpen(false);
       setWalletToDelete(null);
     } catch (error) {
-      toast({
-        title: 'Failed to delete wallet',
-        description: 'An error occurred while deleting the wallet. Please try again.',
-        variant: 'destructive',
-      });
+      // Handle error silently
     } finally {
       setIsDeleting(false);
     }

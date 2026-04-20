@@ -2,7 +2,6 @@
 
 import { useFinance } from '@/lib/context/FinanceContext';
 import { useEffect, useRef } from 'react';
-import { toast } from 'sonner';
 
 const STORAGE_KEY = 'finsense_shown_alerts';
 
@@ -45,30 +44,7 @@ export function AlertBanner() {
       processedAlertsRef.current.add(alert.id);
       saveProcessedAlerts(processedAlertsRef.current);
 
-      // Use proper toast function based on severity
-      const severity = alert.severity as 'info' | 'warning' | 'error';
-      try {
-        if (severity === 'warning') {
-          toast.warning(alert.title, {
-            description: alert.message,
-            duration: 5000,
-          });
-        } else if (severity === 'error') {
-          toast.error(alert.title, {
-            description: alert.message,
-            duration: 5000,
-          });
-        } else {
-          toast.info(alert.title, {
-            description: alert.message,
-            duration: 5000,
-          });
-        }
-      } catch (error) {
-        console.error('Failed to show toast:', error);
-      }
-
-      // Automatically dismiss the alert after showing it
+      // Automatically dismiss the alert
       dismissAlert(alert.id).catch((error) => {
         console.error('Failed to dismiss alert:', error);
       });

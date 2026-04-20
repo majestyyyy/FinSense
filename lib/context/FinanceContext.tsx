@@ -408,6 +408,66 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, []);
 
+  // Real-time subscriptions for transactions and wallets
+  useEffect(() => {
+    if (!supabase || !user?.id) return;
+
+    const subscriptions: any[] = [];
+
+    // Subscribe to transaction changes
+    const transactionSubscription = supabase
+      .channel(`transactions:user_id=eq.${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'transactions',
+          filter: `user_id=eq.${user.id}`,
+        },
+        async (payload) => {
+          // Refetch transactions after change to ensure consistency
+          try {
+            const updated = await supabaseHelpers.getTransactions(user.id);
+            setTransactions(updated.map(mapTransaction));
+          } catch (error) {
+            console.error('Error refetching transactions after change:', error);
+          }
+        }
+      )
+      .subscribe();
+
+    // Subscribe to wallet changes
+    const walletSubscription = supabase
+      .channel(`wallets:user_id=eq.${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'wallets',
+          filter: `user_id=eq.${user.id}`,
+        },
+        async (payload) => {
+          // Refetch wallets after change to ensure consistency
+          try {
+            const updated = await supabaseHelpers.getWallets(user.id);
+            setWallets(updated.map(mapWallet));
+          } catch (error) {
+            console.error('Error refetching wallets after change:', error);
+          }
+        }
+      )
+      .subscribe();
+
+    subscriptions.push(transactionSubscription);
+    subscriptions.push(walletSubscription);
+
+    return () => {
+      subscriptions.forEach((sub) => sub.unsubscribe());
+    };
+  }, [user?.id, supabase]);
+
   // Save user to localStorage
   useEffect(() => {
     if (isHydrated) {
@@ -528,6 +588,30 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     try {
       const newTransaction = await supabaseHelpers.addTransaction(user.id, transaction);
       setTransactions((prev) => [...prev, mapTransaction(newTransaction)]);
+      
+      // Update wallet balance
+      if (transaction.walletId) {
+        const wallet = wallets.find((w) => w.id === transaction.walletId);
+        if (wallet) {
+          const amountChange = transaction.type === 'income' ? transaction.amount : -transaction.amount;
+          const newBalance = wallet.balance + amountChange;
+          await supabaseHelpers.updateWallet(transaction.walletId, {
+            balance: newBalance,
+          });
+
+          // Refetch wallet to ensure consistency
+          try {
+            const freshWallets = await supabaseHelpers.getWallets(user.id);
+            setWallets((prev) =>
+              prev.map((w) =>
+                w.id === transaction.walletId ? mapWallet(freshWallets.find((fw) => fw.id === w.id) || w) : w
+              )
+            );
+          } catch (error) {
+            console.warn('Failed to refetch wallet after transaction:', error);
+          }
+        }
+      }
       return;
     } catch (error: unknown) {
       console.error('Supabase addTransaction error:', error);
@@ -552,13 +636,17 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       setTransactions((prev) => prev.map((t) => (t.id === id ? mapTransaction(updated) : t)));
 
       // Handle wallet balance updates
-      // Reverse old transaction
+      const walletIds = new Set<string>();
+      
+      // Reverse old transaction if wallet changed or amount/type changed
       if (oldTransaction.walletId) {
+        walletIds.add(oldTransaction.walletId);
         const reverseAmount = oldTransaction.type === 'income' ? -oldTransaction.amount : oldTransaction.amount;
         const oldWallet = wallets.find((w) => w.id === oldTransaction.walletId);
         if (oldWallet) {
-          await updateWallet(oldTransaction.walletId, {
-            balance: oldWallet.balance + reverseAmount,
+          const newBalance = oldWallet.balance + reverseAmount;
+          await supabaseHelpers.updateWallet(oldTransaction.walletId, {
+            balance: newBalance,
           });
         }
       }
@@ -569,12 +657,26 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       const newAmount = updates.amount ?? oldTransaction.amount;
 
       if (newWalletId) {
+        walletIds.add(newWalletId);
         const newWallet = wallets.find((w) => w.id === newWalletId);
         if (newWallet) {
           const applyAmount = newType === 'income' ? newAmount : -newAmount;
-          await updateWallet(newWalletId, {
-            balance: newWallet.balance + applyAmount,
+          const newBalance = newWallet.balance + applyAmount;
+          await supabaseHelpers.updateWallet(newWalletId, {
+            balance: newBalance,
           });
+        }
+      }
+
+      // Refetch affected wallets to ensure consistency
+      if (walletIds.size > 0) {
+        try {
+          const freshWallets = await supabaseHelpers.getWallets(user?.id ?? '');
+          setWallets((prev) =>
+            prev.map((w) => (walletIds.has(w.id) ? mapWallet(freshWallets.find((fw) => fw.id === w.id) || w) : w))
+          );
+        } catch (error) {
+          console.warn('Failed to refetch wallets:', error);
         }
       }
       return;
@@ -597,9 +699,22 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
         const reverseAmount = transaction.type === 'income' ? -transaction.amount : transaction.amount;
         const wallet = wallets.find((w) => w.id === transaction.walletId);
         if (wallet) {
-          await updateWallet(transaction.walletId, {
-            balance: wallet.balance + reverseAmount,
+          const newBalance = wallet.balance + reverseAmount;
+          await supabaseHelpers.updateWallet(transaction.walletId, {
+            balance: newBalance,
           });
+        }
+
+        // Refetch wallet to ensure consistency
+        try {
+          const freshWallets = await supabaseHelpers.getWallets(user?.id ?? '');
+          setWallets((prev) =>
+            prev.map((w) =>
+              w.id === transaction.walletId ? mapWallet(freshWallets.find((fw) => fw.id === w.id) || w) : w
+            )
+          );
+        } catch (error) {
+          console.warn('Failed to refetch wallet after delete:', error);
         }
       }
       return;
